@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Under the Neon Lights: Analysis</title>
+  </head>
+  <body style="background: #efefef;">
+    <div class="scripts">
+      <script src="./js/two.js"></script>
+      <script src="./js/sound.js"></script>
+      <script src="./js/equalizer.js"></script>
+      <script>
+
+        var equalizer = new Equalizer().appendTo(document.body);
+        equalizer.two.renderer.domElement.style.position = 'absolute';
+        equalizer.two.renderer.domElement.style.top = 50 + '%';
+        equalizer.two.renderer.domElement.style.left = 50 + '%';
+        equalizer.two.renderer.domElement.style.marginLeft = - 120 + 'px';
+        equalizer.two.renderer.domElement.style.marginTop = - 70 + 'px';
+
+        var sound = new Sound('./tommy- playground cred.mp3', function() {
+          sound.play();
+          loop();
+        });
+
+        function loop() {
+          requestAnimationFrame(loop);
+          equalizer.update();
+        }
+
+      </script>
+    </div>
+  </body>
+</html>
