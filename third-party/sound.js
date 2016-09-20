@@ -28,14 +28,7 @@
   var Sound = root.Sound = function(url, callback) {
 
     var scope = this;
-
-    this.url = url;
-
-    this._ended = function() {
-      scope.playing = false;
-    };
-
-    Sound.load(url, function(buffer) {
+    var assignBuffer = function(buffer) {
 
       scope.buffer = buffer;
 
@@ -47,7 +40,25 @@
         callback(scope);
       }
 
-    });
+    };
+
+    this._ended = function() {
+      scope.playing = false;
+    };
+
+    switch (typeof url) {
+
+      case 'string':
+        this.url = url;
+        Sound.load(url, assignBuffer);
+        break;
+
+      case 'array':
+      case 'object':
+        Sound.decode(url, assignBuffer);
+        break;
+
+    }
 
   };
 
@@ -71,24 +82,28 @@
       r.responseType = 'arraybuffer';
 
       r.onload = function(buffer) {
-
-        var success = function(buffer) {
-          if (callback) {
-            callback(buffer);
-          }
-        };
-
-        var error = function() {
-          console.error('decodeAudioData error:', error);
-        };
-
-        ctx.decodeAudioData(r.response, success, error);
-
+        Sound.decode(r.response, callback);
       };
 
       r.send();
 
       return r;
+
+    },
+
+    decode: function(data, callback) {
+
+      var success = function(buffer) {
+        if (callback) {
+          callback(buffer);
+        }
+      };
+
+      var error = function() {
+        console.error('decodeAudioData error:', error);
+      };
+
+      ctx.decodeAudioData(data, success, error);
 
     }
 

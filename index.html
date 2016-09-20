@@ -20,17 +20,61 @@
       <script>
 
         var equalizer = new Equalizer().appendTo(document.body);
-        equalizer.two.renderer.domElement.style.position = 'absolute';
-        equalizer.two.renderer.domElement.style.top = 50 + '%';
-        equalizer.two.renderer.domElement.style.left = 50 + '%';
-        equalizer.two.renderer.domElement.style.marginLeft = - 120 + 'px';
-        equalizer.two.renderer.domElement.style.marginTop = - 70 + 'px';
-        equalizer.two.renderer.domElement.style.border = '1px solid #ccc';
+        var elem = equalizer.two.renderer.domElement;
+        var sound;
 
-        var sound = new Sound('./tommy- playground cred.mp3', function() {
-          sound.play();
-          loop();
+        elem.style.position = 'absolute';
+        elem.style.top = 50 + '%';
+        elem.style.left = 50 + '%';
+        elem.style.marginLeft = - 120 + 'px';
+        elem.style.marginTop = - 70 + 'px';
+        elem.style.border = '1px solid #ccc';
+
+        elem.addEventListener('drop', function(e) {
+
+          e.stopPropagation();
+          e.preventDefault();
+
+          elem.style.background = 'transparent';
+          var file = e.dataTransfer.files[0];
+
+          if (!file) {
+            return;
+          }
+
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var data = e.target.result;
+            if (sound) {
+              sound.stop();
+            }
+            sound = new Sound(data, setup);
+            equalizer.reset();
+          };
+
+          reader.readAsArrayBuffer(file);
+
+        }, false);
+        elem.addEventListener('dragover', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          elem.style.background = 'rgba(200, 255, 150, 0.33)';
+        }, false);
+        elem.addEventListener('dragleave', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          elem.style.background = 'transparent';
         });
+
+        equalizer.update();
+
+        function setup() {
+          sound.play();
+          if (!loop.init) {
+            loop();
+            loop.init = true;
+          }
+        }
 
         function loop() {
           requestAnimationFrame(loop);

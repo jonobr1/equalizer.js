@@ -192,6 +192,21 @@
 
       return this;
 
+    },
+
+    reset: function() {
+
+      for (var i = 0; i < this.average.vertices.length; i++) {
+        var anchor = this.average.vertices[i];
+        anchor.sum = 0;
+        anchor.value = 0;
+        anchor.y = this.two.height;
+      }
+
+      this.average.index = 1;
+
+      return this;
+
     }
 
   });
