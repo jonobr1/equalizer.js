@@ -153,8 +153,10 @@
 
         if (changedDirection && band.direction.value > 0) {
           band.beat.scale = 3;
+          band.beat.updated = true;
         } else {
           band.beat.scale += (1 - band.beat.scale) * Equalizer.drift;
+          band.beat.updated = false;
         }
 
         band.direction.stroke = band.direction.value <= 0 ? 'rgb(255, 100, 100)'
@@ -169,13 +171,15 @@
 
         var anchor = this.average.vertices[i];
         anchor.sum += band.value;
-        var average = anchor.sum / this.average.index;
-        anchor.y = two.height - height * average / Equalizer.amplitude;
+        anchor.value = anchor.sum / this.average.index;
+        anchor.y = two.height - height * anchor.value / Equalizer.amplitude;
 
-        if (Math.abs(band.value - average) > Equalizer.amplitude * Equalizer.threshold) {
+        if (Math.abs(band.value - anchor.value) > Equalizer.amplitude * Equalizer.threshold) {
           anchor.outlier.scale = 2;
+          anchor.outlier.updated = true;
         } else {
           anchor.outlier.scale += (1 - anchor.outlier.scale) * Equalizer.drift;
+          anchor.outlier.updated = false;
         }
 
       }
