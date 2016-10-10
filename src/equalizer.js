@@ -276,7 +276,8 @@
     });
 
     extend(two.renderer.domElement.style, styles.classic, {
-      paddingTop: 0
+      paddingTop: 0,
+      cursor: 'ns-resize'
     });
 
     this.layers = {
