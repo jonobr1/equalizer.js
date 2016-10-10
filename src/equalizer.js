@@ -18,6 +18,19 @@
       position: 'relative',
       background: 'white',
       padding: 20 + 'px'
+    },
+    recording: {
+      position: 'absolute',
+      borderRadius: '50%',
+      top: 10 + 'px',
+      left: '50%',
+      width: 8 + 'px',
+      height: 8 + 'px',
+      marginLeft: - 4 + 'px',
+      marginTop: - 4 + 'px',
+      cursor: 'pointer',
+      background: '#ccc',
+      content: ''
     }
   }
 
@@ -135,9 +148,13 @@
 
       if (!this.timeline) {
 
+        var container = document.createElement('div');
+        container.style.position = 'relative';
+        elem.appendChild(container);
+
         var two = this.two;
         this.timeline = new Timeline(this, two.width, two.width * 2)
-          .appendTo(this.domElement);
+          .appendTo(container);
 
         this.timeline.analyze(sound, json);
 
@@ -247,6 +264,8 @@
 
   var Timeline = Equalizer.Timeline = function(equalizer, width, height) {
 
+    var scope = this;
+
     this.equalizer = equalizer;
     this.tracks = [];
 
@@ -300,6 +319,21 @@
     this.duration.fill = '#bbb';
     this.layers.labels.add(this.duration);
 
+    this.recording = document.createElement('div');
+    this.recording.classList.add('recording');
+
+    Object.defineProperty(this.recording, 'enabled', {
+      get: function() {
+        return this._enabled;
+      },
+      set: function(v) {
+        this._enabled = !!v;
+        this.style.background = this._enabled ? 'rgb(255, 50, 50)' : '#888';
+      }
+    });
+    extend(this.recording.style, styles.recording);
+    this.recording.enabled = true;
+
     for (i = 0; i < Timeline.Resolution; i++) {
       var shape = new Two.Ellipse(0, 0, 2, 2);
       shape.fill = 'rgb(50, 150, 255)';
@@ -337,12 +371,11 @@
 
       var mousedown = function(e) {
 
-        e.preventDefault();
-
         var rect = stage.getBoundingClientRect();
         var x = e.clientX - rect.left;
         var y = e.clientY - rect.top;
 
+        mouse.playing = scope.sound.playing;
         mouse.set(x, y);
         scope.sound.pause();
 
@@ -351,6 +384,8 @@
 
       };
       var mousemove = function(e) {
+
+        e.preventDefault();
 
         var rect = stage.getBoundingClientRect();
         var x = e.clientX - rect.left;
@@ -365,11 +400,36 @@
         window.removeEventListener('mousemove', mousemove, false);
         window.removeEventListener('mouseup', mouseup, false);
 
-        scope.sound.play();
+        if (mouse.playing) {
+          scope.sound.play();
+        }
 
       };
 
+      var keydown = function(e) {
+
+        var triggered = false;
+
+        switch (String.fromCharCode(e.which)) {
+
+          case ' ':
+            triggered = true;
+            scope.sound[scope.sound.playing ? 'pause' : 'play']();
+            break;
+
+        }
+
+        if (triggered) {
+          e.preventDefault();
+        }
+
+      };
+
+      this.recording.addEventListener('click', function() {
+        scope.recording.enabled = !scope.recording.enabled;
+      }, false);
       stage.addEventListener('mousedown', mousedown, false);
+      window.addEventListener('keydown', keydown, false);
 
     }
 
@@ -378,11 +438,11 @@
   extend(Timeline.prototype, {
 
     sound: null,
-    recording: false,
     range: 5, // in seconds
 
     appendTo: function(elem) {
       this.two.appendTo(elem);
+      elem.appendChild(this.recording);
       return this;
     },
 
@@ -413,7 +473,7 @@
         var band = bands[i];
         var track = this.tracks[i];
 
-        if (this.recording && band.beat.updated) {
+        if (this.recording.enabled && band.beat.updated) {
           track.add(new Timeline.Unit(currentTime, true));
         }
 
@@ -424,7 +484,8 @@
 
         if (unit) {
 
-          while (id < Timeline.Resolution && unit && unit.time < (currentTime + this.range)) {
+          while (id < Timeline.Resolution && unit
+            && unit.time < (currentTime + this.range)) {
 
             var shape = this.layers.stage.children[id];
             var ypct = (unit.time - currentTime) / this.range;
@@ -538,10 +599,15 @@
 
     update: function(time) {
 
+      if (this.elements.length <= 0) {
+        return this;
+      }
+
       var ref = this.elements[this.elements.index];
 
       if (!ref) {
-        return this;
+        this.elements.index = 0;
+        ref = this.elements[0];
       }
 
       if (ref.time > time) {
