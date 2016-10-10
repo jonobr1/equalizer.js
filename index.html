@@ -21,12 +21,11 @@
       <script src="./third-party/two.js"></script>
       <script src="./third-party/sound.js"></script>
       <script src="./src/equalizer.js"></script>
-      <script src="./assets/data/09 Nights.js"></script>
       <script>
 
         var equalizer = new Equalizer().appendTo(document.body);
         var elem = equalizer.domElement;
-        var sound = new Sound('./assets/audio/09 Nights.mp3', setup);
+        var sound;
 
         elem.style.display = 'inline-block';
         elem.style.margin = '20px';
@@ -71,7 +70,8 @@
         equalizer.update();
 
         function setup() {
-          equalizer.analyze(sound, json);
+          equalizer.analyze(sound);
+          equalizer.timeline.recording = true;
           sound.play();
           if (!loop.init) {
             loop();
