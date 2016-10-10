@@ -7,6 +7,7 @@
   var root = this;
   var previousSound = root.Sound || {};
   var ctx, analysis, has;
+  var identity = function(v) { return v; };
 
   root.AudioContext = root.AudioContext || root.webkitAudioContext;
   has = !!(root.AudioContext);
@@ -177,23 +178,35 @@
 
     pause: function(options) {
 
-      Sound.prototype.stop.apply(this, arguments);
+      if (!this.source || !this.playing) {
+        return this;
+      }
 
-      if (this.source && this.playing) {
+      var params = defaults(options || {}, {
+        time: ctx.currentTime
+      });
 
-        var currentTime = ctx.currentTime;
-        if (options.time != 'undefined') {
-          currentTime = options.time;
-        }
+      this.source.onended = identity;
 
-        this._offset = currentTime - this._startTime;
+      if (this.source.stop) {
+        this.source.stop(params.time);
+      } else if (this.source.noteOff) {
+        this.source.noteOff(params.time);
+      }
 
-        if (this._loop) {
-          this._offset = Math.max(this._offset, 0.0) % this.buffer.duration;
-        } else {
-          this._offset = Math.min(Math.max(this._offset, 0.0), this.buffer.duration);
-        }
+      this.playing = false;
 
+      var currentTime = ctx.currentTime;
+      if (params.time != 'undefined') {
+        currentTime = params.time;
+      }
+
+      this._offset = currentTime - this._startTime + (this._offset || 0);
+
+      if (this._loop) {
+        this._offset = Math.max(this._offset, 0.0) % this.buffer.duration;
+      } else {
+        this._offset = Math.min(Math.max(this._offset, 0.0), this.buffer.duration);
       }
 
       return this;
@@ -209,6 +222,8 @@
       var params = defaults(options || {}, {
         time: ctx.currentTime
       });
+
+      this.source.onended = identity;
 
       if (this.source.stop) {
         this.source.stop(params.time);
@@ -273,7 +288,7 @@
   Object.defineProperty(Sound.prototype, 'currentTime', {
 
     get: function() {
-      return (ctx.currentTime - this._startTime) * this._speed;
+      return this.playing ? (ctx.currentTime - this._startTime + this._offset) * this._speed : this._offset;
     },
 
     set: function(t) {
@@ -304,6 +319,17 @@
 
     get: function() {
       return Math.floor(this.currentTime * 1000);
+    }
+
+  });
+
+  Object.defineProperty(Sound.prototype, 'duration', {
+
+    get: function() {
+      if (!this.buffer) {
+        return 0;
+      }
+      return this.buffer.duration;
     }
 
   });

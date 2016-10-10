@@ -5,22 +5,34 @@
 
   var root = this;
   var previousEqualizer = root.Equalizer || {};
+  var styles = {
+    font: {
+      family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+      size: 11,
+      fill: '#888',
+      leading: 20,
+      weight: 500
+    },
+    classic: {
+      display: 'block',
+      position: 'relative',
+      background: 'white',
+      padding: 20 + 'px'
+    }
+  }
 
   var Equalizer = root.Equalizer = function(width, height) {
 
     this.analyzer = Sound.analysis;
+    this.domElement = document.createElement('div');
+    this.domElement.classList.add('equalizer');
 
     var two = this.two = new Two({
       width: width || 200,
       height: height || 100
-    });
+    }).appendTo(this.domElement);
 
-    this.two.renderer.domElement.id = 'equalizer';
-
-    extend(two.renderer.domElement.style, {
-      background: 'white',
-      padding: 20 + 'px'
-    });
+    extend(two.renderer.domElement.style, styles.classic);
 
     var vertices = [];
     this.bands = [];
@@ -115,8 +127,26 @@
   extend(Equalizer.prototype, {
 
     appendTo: function(elem) {
-      this.two.appendTo(elem);
+      elem.appendChild(this.domElement);
       return this;
+    },
+
+    analyze: function(sound, json) {
+
+      if (!this.timeline) {
+
+        var two = this.two;
+        this.timeline = new Timeline(this, two.width, two.width * 2)
+          .appendTo(this.domElement);
+
+        this.timeline.analyze(sound, json);
+
+      }
+
+      this.sound = sound;
+
+      return this;
+
     },
 
     update: function(silent) {
@@ -186,6 +216,10 @@
 
       this.average.index++;
 
+      if (this.timeline) {
+        this.timeline.update(silent);
+      }
+
       if (!silent) {
         two.update();
       }
@@ -211,6 +245,363 @@
 
   });
 
+  var Timeline = Equalizer.Timeline = function(equalizer, width, height) {
+
+    this.equalizer = equalizer;
+    this.tracks = [];
+
+    var two = this.two = new Two({
+      type: Two.Types.canvas,
+      width: width || 200,
+      height: height || 400
+    });
+
+    extend(two.renderer.domElement.style, styles.classic, {
+      paddingTop: 0
+    });
+
+    this.layers = {
+      backdrop: two.makeGroup(),
+      rulers: two.makeGroup(),
+      stage: two.makeGroup(),
+      labels: two.makeGroup()
+    };
+
+    var i, line, x, y, text;
+
+    for (i = 0; i < Equalizer.Resolution; i++) {
+
+      var pct = (i + 0.5) / Equalizer.Resolution;
+
+      x = pct * two.width - two.width / 2;
+      y = two.height / 2;
+      line = new Two.Line(x, - y, x, y);
+
+      line.noFill().stroke = '#eee';
+      this.layers.backdrop.add(line);
+
+      this.tracks.push(new Timeline.Track(this, i));
+
+    }
+
+    x = two.width / 2;
+    y = 20 - two.height / 2;
+
+    line = this.needle = new Two.Line(- x, y, x, y);
+    line.noFill().stroke = '#888';
+    this.layers.labels.add(line);
+
+    this.time = new Two.Text(formatSeconds(0), - x, y - styles.font.leading / 2, styles.font);
+    this.time.alignment = 'left';
+    this.layers.labels.add(this.time);
+
+    this.duration = new Two.Text(formatSeconds(0), x, y - styles.font.leading / 2, styles.font);
+    this.duration.alignment = 'right';
+    this.duration.fill = '#bbb';
+    this.layers.labels.add(this.duration);
+
+    for (i = 0; i < Timeline.Resolution; i++) {
+      var shape = new Two.Ellipse(0, 0, 2, 2);
+      shape.fill = 'rgb(50, 150, 255)';
+      shape.noStroke();
+      shape.visible = false;
+      this.layers.stage.add(shape);
+    }
+
+    two.scene.translation.set(two.width / 2, two.height / 2);
+
+    Timeline.addInteraction.call(this);
+
+  };
+
+  extend(Timeline, {
+
+    Resolution: 512,
+
+    Atomic: 0.33,
+
+    addInteraction: function() {
+
+      var scope = this;
+      var two = this.two;
+      var stage = this.two.renderer.domElement;
+
+      stage.addEventListener('mousewheel', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var dy = e.deltaY / two.height;
+        scope.range = Math.max(Math.min(scope.range + dy, scope.sound.duration), Timeline.Atomic);
+      }, false);
+
+      var mouse = new Two.Vector();
+
+      var mousedown = function(e) {
+
+        e.preventDefault();
+
+        var rect = stage.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+
+        mouse.set(x, y);
+        scope.sound.pause();
+
+        window.addEventListener('mousemove', mousemove, false);
+        window.addEventListener('mouseup', mouseup, false);
+
+      };
+      var mousemove = function(e) {
+
+        var rect = stage.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+
+        scope.sound.currentTime -= scope.range * (y - mouse.y) / two.height;
+        mouse.set(x, y);
+
+      };
+      var mouseup = function(e) {
+
+        window.removeEventListener('mousemove', mousemove, false);
+        window.removeEventListener('mouseup', mouseup, false);
+
+        scope.sound.play();
+
+      };
+
+      stage.addEventListener('mousedown', mousedown, false);
+
+    }
+
+  });
+
+  extend(Timeline.prototype, {
+
+    sound: null,
+    recording: false,
+    range: 5, // in seconds
+
+    appendTo: function(elem) {
+      this.two.appendTo(elem);
+      return this;
+    },
+
+    analyze: function(sound, json) {
+      this.sound = sound;
+      this.duration.value = formatSeconds(this.sound.duration);
+      if (json) {
+        this.fromJSON(json);
+      }
+      return this;
+    },
+
+    update: function(silent) {
+
+      var currentTime = parseFloat(this.sound.currentTime.toFixed(3));
+
+      if (this.sound) {
+        this.time.value = formatSeconds(currentTime);
+      }
+
+      var two = this.two;
+      var i, id = 0; // index of shape to be drawn.
+      var bands = this.equalizer.bands;
+
+      for (i = this.tracks.length - 1; i >= 0; i--) {
+
+        var pct = (i + 0.5) / this.tracks.length;
+        var band = bands[i];
+        var track = this.tracks[i];
+
+        if (this.recording && band.beat.updated) {
+          track.add(new Timeline.Unit(currentTime, true));
+        }
+
+        track.update(currentTime);
+
+        var uid = track.elements.index;
+        var unit = track.elements[uid];
+
+        if (unit) {
+
+          while (id < Timeline.Resolution && unit && unit.time < (currentTime + this.range)) {
+
+            var shape = this.layers.stage.children[id];
+            var ypct = (unit.time - currentTime) / this.range;
+
+            shape.visible = true;
+            shape.translation.x = two.width * pct - two.width / 2;
+            shape.translation.y = two.height * ypct + this.needle.translation.y;
+
+            uid++;
+            unit = track.elements[uid];
+            id++;
+
+          }
+
+        }
+
+      }
+
+      for (i = id; i < Timeline.Resolution; i++) {
+        var shape = this.layers.stage.children[i];
+        shape.visible = false;
+      }
+
+      if (!silent) {
+        this.two.update();
+      }
+
+      return this;
+
+    },
+
+    toJSON: function() {
+
+      var resp = {
+        url: this.sound.url || '',
+        duration: this.sound.duration,
+        elements: []
+      };
+
+      for (var i = 0; i < this.tracks.length; i++) {
+        var json = this.tracks[i].toJSON();
+        resp.elements.push(json);
+      }
+
+      return resp;
+
+    },
+
+    fromJSON: function(obj) {
+
+      for (var i = 0; i < this.tracks.length; i++) {
+        this.tracks[i].fromJSON(obj.elements[i]);
+      }
+
+      return this;
+
+    }
+
+  });
+
+  Timeline.Track = function(timeline, i) {
+
+    this.timeline = timeline;
+    this.index = i;
+    this.elements = [];
+    this.elements.index = 0;
+
+  };
+
+  extend(Timeline.Track.prototype, {
+
+    add: function(unit) {
+
+      if (this.elements.length <= 0) {
+        this.elements.push(unit);
+        return this;
+      }
+
+      var length = this.elements.length;
+      var index = Math.min(this.elements.index, length - 1);
+      var ref = this.elements[index];
+      var i;
+
+      if (unit.time > ref.time) {
+        for (i = index; i < length; i++) {
+          ref = this.elements[i];
+          if (unit.time < ref.time) {
+            this.elements.splice(i, 0, unit);
+            this.elements.index = i;
+            return this;
+          }
+        }
+        this.elements.push(unit);
+        this.elements.index = this.elements.length - 1;
+        return this;
+      }
+
+      for (i = index; i >= 0; i--) {
+        ref = this.elements[i];
+        if (unit.time > ref.time) {
+          this.elements.splice(i + 1, 0, unit);
+          this.elements.index = i + 1;
+          return this;
+        }
+      }
+      this.elements.unshift(unit);
+      this.elements.index = 0;
+      return this;
+
+    },
+
+    update: function(time) {
+
+      var ref = this.elements[this.elements.index];
+
+      if (!ref) {
+        return this;
+      }
+
+      if (ref.time > time) {
+        while (this.elements.index > 0 && this.elements[this.elements.index].time > time) {
+          this.elements.index--;
+        }
+        return this;
+      }
+
+      while (this.elements.index < this.elements.length && this.elements[this.elements.index].time < time) {
+        this.elements.index++;
+      }
+      return this;
+
+    },
+
+    toJSON: function() {
+      var resp = [];
+      for (var i = 0; i < this.elements.length; i++) {
+        var el = this.elements[i];
+        resp.push({ t: el.time, v: el.value ? 1 : 0 });
+      }
+      return resp;
+    },
+
+    fromJSON: function(list) {
+      this.elements.length = 0;
+      this.elements.index = 0;
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        this.elements.push(new Timeline.Unit(el.t, !!el.v));
+      }
+      return this;
+    }
+
+  });
+
+  Timeline.Unit = function(time, value) {
+
+    this.time = time || 0;
+    this.value = value || true;
+
+  };
+
+  extend(Timeline.Unit, {
+
+    Types: {
+      beat: 'beat'
+    }
+
+  });
+
+  extend(Timeline.Unit.prototype, {
+
+    type: Timeline.Unit.Types.beat,
+    time: 0,
+    value: false
+
+  });
+
   function clamp(v, a, b) {
     return Math.min(Math.max(v, a), b);
   }
@@ -229,6 +620,20 @@
     }
 
     return base;
+
+  }
+
+  function formatSeconds(time) {
+
+    var min = Math.floor(time / 60);
+    var sec = Math.floor(time % 60);
+    var mil = Math.floor((time - Math.floor(time)) * 100);
+
+    return [
+      min < 10 ? '0' + min : min,
+      sec < 10 ? '0' + sec : sec,
+      mil < 10 ? '0' + mil : mil
+    ].join(':');
 
   }
 
