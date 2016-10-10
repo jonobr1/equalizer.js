@@ -16,7 +16,7 @@
     classic: {
       display: 'block',
       position: 'relative',
-      background: 'white',
+      background: 'transparent',
       padding: 20 + 'px'
     },
     recording: {
