@@ -153,7 +153,7 @@
         elem.appendChild(container);
 
         var two = this.two;
-        this.timeline = new Timeline(this, two.width, two.width * 2)
+        this.timeline = new Timeline(this, two.width, two.width * 1.5)
           .appendTo(container);
 
         this.timeline.analyze(sound, json);
@@ -272,7 +272,7 @@
     var two = this.two = new Two({
       type: Two.Types.canvas,
       width: width || 200,
-      height: height || 400
+      height: height || 300
     });
 
     extend(two.renderer.domElement.style, styles.classic, {
@@ -305,11 +305,11 @@
     }
 
     x = two.width / 2;
-    y = 20 - two.height / 2;
+    y = Timeline.Padding - two.height / 2;
 
-    line = this.needle = new Two.Line(- x, y, x, y);
-    line.noFill().stroke = '#888';
-    this.layers.labels.add(line);
+    this.needle = new Two.Line(- x, y, x, y);
+    this.needle.noFill().stroke = '#888';
+    this.layers.labels.add(this.needle);
 
     this.time = new Two.Text(formatSeconds(0), - x, y - styles.font.leading / 2, styles.font);
     this.time.alignment = 'left';
@@ -330,10 +330,15 @@
       set: function(v) {
         this._enabled = !!v;
         this.style.background = this._enabled ? 'rgb(255, 50, 50)' : '#888';
+        this.style.top = (this._enabled ? two.height - 10 : 10) + 'px';
+        scope.needle.translation.y = this._enabled ? two.height / 2 : Timeline.Padding - two.height / 2;
+        scope.time.translation.y = scope.needle.translation.y - styles.font.leading / 2;
+        scope.duration.translation.y = scope.time.translation.y;
       }
     });
+
     extend(this.recording.style, styles.recording);
-    this.recording.enabled = true;
+    this.recording.enabled = false;
 
     for (i = 0; i < Timeline.Resolution; i++) {
       var shape = new Two.Ellipse(0, 0, 2, 2);
@@ -354,6 +359,8 @@
     Resolution: 512,
 
     Atomic: 0.33,
+
+    Padding: 20,
 
     addInteraction: function() {
 
@@ -439,7 +446,7 @@
   extend(Timeline.prototype, {
 
     sound: null,
-    range: 5, // in seconds
+    range: 3, // in seconds
 
     appendTo: function(elem) {
       this.two.appendTo(elem);
@@ -458,15 +465,16 @@
 
     update: function(silent) {
 
-      var currentTime = parseFloat(this.sound.currentTime.toFixed(3));
-
-      if (this.sound) {
-        this.time.value = formatSeconds(currentTime);
+      if (!this.sound) {
+        return this;
       }
 
+      var currentTime = parseFloat(this.sound.currentTime.toFixed(3));
       var two = this.two;
       var i, id = 0; // index of shape to be drawn.
       var bands = this.equalizer.bands;
+
+      this.time.value = formatSeconds(currentTime);
 
       for (i = this.tracks.length - 1; i >= 0; i--) {
 
@@ -483,7 +491,37 @@
         var uid = track.elements.index;
         var unit = track.elements[uid];
 
-        if (unit) {
+        if (this.recording.enabled) {
+
+          if (!unit) {
+            uid = track.elements.length - 1;
+            unit = track.elements[uid];
+          }
+
+          while (id < Timeline.Resolution && unit
+            && unit.time > (currentTime - this.range)) {
+
+            var shape = this.layers.stage.children[id];
+            var ypct = (unit.time - currentTime) / this.range;
+
+            if (unit.time < currentTime) {
+              shape.visible = true;
+              shape.translation.x = two.width * pct - two.width / 2;
+              shape.translation.y = two.height * ypct + this.needle.translation.y;
+              id++;
+            }
+
+            uid--;
+            unit = track.elements[uid];
+
+          }
+
+        } else {
+
+          if (!unit) {
+            uid = 0;
+            unit = track.elements[uid];
+          }
 
           while (id < Timeline.Resolution && unit
             && unit.time < (currentTime + this.range)) {
@@ -491,13 +529,15 @@
             var shape = this.layers.stage.children[id];
             var ypct = (unit.time - currentTime) / this.range;
 
-            shape.visible = true;
-            shape.translation.x = two.width * pct - two.width / 2;
-            shape.translation.y = two.height * ypct + this.needle.translation.y;
+            if (unit.time > currentTime) {
+              shape.visible = true;
+              shape.translation.x = two.width * pct - two.width / 2;
+              shape.translation.y = two.height * ypct + this.needle.translation.y;
+              id++;
+            }
 
             uid++;
             unit = track.elements[uid];
-            id++;
 
           }
 
