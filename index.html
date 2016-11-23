@@ -100,6 +100,7 @@
       <script src="./third-party/two.js"></script>
       <script src="./third-party/sound.js"></script>
       <script src="./src/equalizer.js"></script>
+      <script src="./src/timeline.js"></script>
       <script>
 
         var equalizer = new Equalizer()
@@ -130,6 +131,7 @@
               sound.stop();
             }
             sound = new Sound(data, setup);
+            sound.url = file.name;
             equalizer.reset();
           };
 
@@ -169,14 +171,13 @@
           }
           var textarea = document.querySelector('textarea');
           textarea.innerHTML = JSON.stringify(equalizer.timeline.toJSON());
-          console.log('textarea', textarea);
         }, false);
         document.querySelector('#import').addEventListener('click', function() {
           if (!equalizer.timeline) {
             return;
           }
           var textarea = document.querySelector('textarea');
-          equalizer.timeline.fromJSON(JSON.parse(textarea.innerHTML));
+          equalizer.timeline.fromJSON(JSON.parse(textarea.value));
         }, false);
 
         equalizer.update();
