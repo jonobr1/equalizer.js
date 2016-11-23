@@ -319,7 +319,16 @@
     fromJSON: function(obj) {
 
       for (var i = 0; i < this.tracks.length; i++) {
-        this.tracks[i].fromJSON(obj.elements[i]);
+
+        // Maps the objects elements to the tracks
+        // so that you can try to accommodate different
+        // bandwidth resolutions.
+        var pct = i / this.tracks.length;
+        var index = Math.floor(obj.elements.length * pct);
+
+        console.log(i, index);
+        this.tracks[i].fromJSON(obj.elements[index]);
+
       }
 
       return this;
