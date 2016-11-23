@@ -577,8 +577,6 @@
 
     fromJSON: function(obj) {
 
-      console.log(obj);
-
       for (var i = 0; i < this.tracks.length; i++) {
         this.tracks[i].fromJSON(obj.elements[i]);
       }
