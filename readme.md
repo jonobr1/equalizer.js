@@ -12,6 +12,7 @@ Things that need to be figured out:
 + Playback without audio
 + When loading don't update / append UI (for production)
 + Ability to click and drag a `Equalizer.Timeline.Unit` in order to create a more useful WYSIWYG
-+ Equalizer should work without a `Equalizer.Timeline`
++ `Equalizer` should work without a `Equalizer.Timeline`
++ Likewise `Equalizer.Timeline` should work without `Equalizer`
 + Build process
 + Tests
