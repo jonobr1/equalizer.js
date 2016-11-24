@@ -14,5 +14,6 @@ Things that need to be figured out:
 + Ability to click and drag a `Equalizer.Timeline.Unit` in order to create a more useful WYSIWYG
 + `Equalizer` should work without a `Equalizer.Timeline`
 + Likewise `Equalizer.Timeline` should work without `Equalizer`
++ Different Unit Types (like Dance Dance Revolution -- beats and holds)
 + Build process
 + Tests
