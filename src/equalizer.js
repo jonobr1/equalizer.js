@@ -184,12 +184,13 @@
       this.analyzer.getByteFrequencyData(this.analyzer.data);
 
       var height = two.height * 0.75;
+      var step = this.analyzer.data.length / this.bands.length;
 
       for (var i = 0, y; i < this.bands.length; i++) {
 
         var pct = i / this.bands.length;
         var band = this.bands[i];
-        var index = Math.floor(pct * this.analyzer.data.length);
+        var index = Math.floor(step * (i + 0.5));
 
         var value = band.value;
         var peak = band.peak.value;

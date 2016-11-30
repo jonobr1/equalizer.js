@@ -11,7 +11,6 @@
     this.tracks = [];
 
     var two = this.two = new Two({
-      type: Two.Types.canvas,
       width: width || 200,
       height: height || 300
     });
