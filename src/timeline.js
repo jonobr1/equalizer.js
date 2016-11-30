@@ -12,11 +12,13 @@
 
     var two = this.two = new Two({
       width: width || 200,
-      height: height || 300
+      height: (height || 300)
     });
 
     Equalizer.Utils.extend(two.renderer.domElement.style, Equalizer.Utils.defaultStyles.classic, {
-      paddingTop: 0,
+      padding: 0,
+      margin: 20 + 'px',
+      marginTop: 0,
       cursor: 'ns-resize'
     });
 
@@ -250,7 +252,8 @@
           }
 
           while (id < Timeline.Resolution && unit
-            && (unit.time > (currentTime - this.range) || unit.value > (currentTime - this.range))) {
+            && (unit.time > (currentTime - this.range)
+              || unit.value > (currentTime - this.range))) {
 
             var shape = this.layers.stage.children[id];
             var ypct = (unit.time - currentTime) / this.range;
@@ -284,7 +287,8 @@
           }
 
           while (id < Timeline.Resolution && unit
-            && (unit.time < (currentTime + this.range) || unit.value < (currentTime + this.range))) {
+            && (unit.time < (currentTime + this.range)
+              || unit.value < (currentTime + this.range))) {
 
             var shape = this.layers.stage.children[id];
             var ypct = (unit.time - currentTime) / this.range;
@@ -386,10 +390,13 @@
       var i;
 
       if (Math.abs(time - ref.time) < Timeline.Viscosity
-        || (ref.type === Timeline.Unit.Types.hold && Math.abs(time - ref.value) < Timeline.Viscosity)) {
+        || (ref.type === Timeline.Unit.Types.hold
+          && Math.abs(time - ref.value) < Timeline.Viscosity)) {
+
         ref.type = Timeline.Unit.Types.hold;
         ref.value = time;
         return this;
+
       }
 
       var unit = new Timeline.Unit(time, true);
@@ -435,21 +442,30 @@
         ref = this.elements[0];
       }
 
-      var a = ref, b = ref, index;
+      var a, b, da, db;
 
       if (ref.time > time) {
-        // TODO: Need to do a diff of time values so that the index
-        // jumps in a `snap` like way and doesn't flip-flop between
-        // two indices.
-        while (this.elements.index > 0 && this.elements[this.elements.index].time > time) {
+        while (this.elements.index > 0
+          && this.elements[this.elements.index].time > time) {
           this.elements.index--;
         }
+
         return this;
+
       }
 
-      while (this.elements.index < this.elements.length && this.elements[this.elements.index].time < time) {
+      while (this.elements.index < this.elements.length
+        && this.elements[this.elements.index].time < time) {
+
+        a = this.elements[this.elements.index + 1];
+        if (a && a.time - time >= 0) {
+          break;
+        }
+
         this.elements.index++;
+
       }
+
       return this;
 
     },
