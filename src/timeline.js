@@ -37,7 +37,7 @@
       y = two.height / 2;
       line = new Two.Line(x, - y, x, y);
 
-      line.noFill().stroke = '#eee';
+      line.noFill().stroke = Timeline.Colors.lightGray;
       this.layers.backdrop.add(line);
 
       this.tracks.push(new Timeline.Track(this, i));
@@ -48,7 +48,7 @@
     y = Timeline.Padding - two.height / 2;
 
     this.needle = new Two.Line(- x, y, x, y);
-    this.needle.noFill().stroke = '#888';
+    this.needle.noFill().stroke = Timeline.Colors.gray;
     this.layers.labels.add(this.needle);
 
     this.time = new Two.Text(Equalizer.Utils.formatSeconds(0), - x, y - Equalizer.Utils.defaultStyles.font.leading / 2, Equalizer.Utils.defaultStyles.font);
@@ -81,9 +81,10 @@
     this.recording.enabled = false;
 
     for (i = 0; i < Timeline.Resolution; i++) {
-      var shape = new Two.Ellipse(0, 0, 2, 2);
-      shape.fill = 'rgb(50, 150, 255)';
-      shape.noStroke();
+      var shape = new Two.Line(0, 0, 0, 0);
+      shape.stroke = Timeline.Colors.blue;
+      shape.linewidth = 4;
+      shape.cap = 'round';
       shape.visible = false;
       this.layers.stage.add(shape);
     }
@@ -96,11 +97,21 @@
 
   Equalizer.Utils.extend(Timeline, {
 
+    Colors: {
+      lightGray: '#eee',
+      gray: '#888',
+      blue: 'rgb(50, 150, 255)',
+      purple: 'rgb(150, 50, 255)',
+      orange: 'orange'
+    },
+
     Resolution: 512,
 
     Atomic: 0.33,
 
     Padding: 20,
+
+    Viscosity: 0.125,  // Seconds
 
     addInteraction: function() {
 
@@ -223,7 +234,7 @@
         var track = this.tracks[i];
 
         if (this.recording.enabled && band.beat.updated) {
-          track.add(new Timeline.Unit(currentTime, true));
+          track.add(currentTime);
         }
 
         track.update(currentTime);
@@ -239,7 +250,7 @@
           }
 
           while (id < Timeline.Resolution && unit
-            && unit.time > (currentTime - this.range)) {
+            && (unit.time > (currentTime - this.range) || unit.value > (currentTime - this.range))) {
 
             var shape = this.layers.stage.children[id];
             var ypct = (unit.time - currentTime) / this.range;
@@ -248,6 +259,15 @@
               shape.visible = true;
               shape.translation.x = two.width * pct - two.width / 2;
               shape.translation.y = two.height * ypct + this.needle.translation.y;
+              switch (unit.type) {
+                case Timeline.Unit.Types.hold:
+                  shape.vertices[1].y = two.height * (unit.value - unit.time)
+                    / this.range;
+                  break;
+                default:
+                  shape.vertices[1].y = 0;
+                  shape.stroke = Timeline.Colors.blue;
+              }
               id++;
             }
 
@@ -264,15 +284,23 @@
           }
 
           while (id < Timeline.Resolution && unit
-            && unit.time < (currentTime + this.range)) {
+            && (unit.time < (currentTime + this.range) || unit.value < (currentTime + this.range))) {
 
             var shape = this.layers.stage.children[id];
             var ypct = (unit.time - currentTime) / this.range;
 
-            if (unit.time > currentTime) {
+            if (unit.time > currentTime || unit.value > currentTime) {
               shape.visible = true;
               shape.translation.x = two.width * pct - two.width / 2;
               shape.translation.y = two.height * ypct + this.needle.translation.y;
+              switch (unit.type) {
+                case Timeline.Unit.Types.hold:
+                  shape.vertices[1].y = two.height * (unit.value - unit.time)
+                    / this.range;
+                  break;
+                default:
+                  shape.vertices[1].y = 0;
+              }
               id++;
             }
 
@@ -324,8 +352,6 @@
         // bandwidth resolutions.
         var pct = i / this.tracks.length;
         var index = Math.floor(obj.elements.length * pct);
-
-        console.log(i, index);
         this.tracks[i].fromJSON(obj.elements[index]);
 
       }
@@ -347,10 +373,10 @@
 
   Equalizer.Utils.extend(Timeline.Track.prototype, {
 
-    add: function(unit) {
+    add: function(time) {
 
       if (this.elements.length <= 0) {
-        this.elements.push(unit);
+        this.elements.push(new Timeline.Unit(time, true));
         return this;
       }
 
@@ -359,7 +385,16 @@
       var ref = this.elements[index];
       var i;
 
-      if (unit.time > ref.time) {
+      if (Math.abs(time - ref.time) < Timeline.Viscosity
+        || (ref.type === Timeline.Unit.Types.hold && Math.abs(time - ref.value) < Timeline.Viscosity)) {
+        ref.type = Timeline.Unit.Types.hold;
+        ref.value = time;
+        return this;
+      }
+
+      var unit = new Timeline.Unit(time, true);
+
+      if (time > ref.time) {
         for (i = index; i < length; i++) {
           ref = this.elements[i];
           if (unit.time < ref.time) {
@@ -400,7 +435,12 @@
         ref = this.elements[0];
       }
 
+      var a = ref, b = ref, index;
+
       if (ref.time > time) {
+        // TODO: Need to do a diff of time values so that the index
+        // jumps in a `snap` like way and doesn't flip-flop between
+        // two indices.
         while (this.elements.index > 0 && this.elements[this.elements.index].time > time) {
           this.elements.index--;
         }
@@ -445,7 +485,8 @@
   Equalizer.Utils.extend(Timeline.Unit, {
 
     Types: {
-      beat: 'beat'
+      beat: 'beat',
+      hold: 'hold'
     }
 
   });
