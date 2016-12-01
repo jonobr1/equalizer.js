@@ -570,7 +570,7 @@
       var resp = [];
       for (var i = 0; i < this.elements.length; i++) {
         var el = this.elements[i];
-        resp.push({ t: el.time, v: el.value ? 1 : 0 });
+        resp.push({ t: el.time, v: el.value });
       }
       return resp;
     },
@@ -580,7 +580,11 @@
       this.elements.index = 0;
       for (var i = 0; i < list.length; i++) {
         var el = list[i];
-        this.elements.push(new Timeline.Unit(el.t, !!el.v));
+        var unit = new Timeline.Unit(el.t, el.v);
+        if (typeof el.v === 'number') {
+          unit.type = Timeline.Unit.Types.hold;
+        }
+        this.elements.push(unit);
       }
       return this;
     }
