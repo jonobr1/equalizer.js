@@ -86,7 +86,7 @@
           <span class="nota-bene">Be careful: recording <a class="explanation" href="https://en.wikipedia.org/wiki/Overdubbing" target="_blank">overdubs</a> so you can build on top of what already exists on the staff.</span>
         </p>
         <p>
-          
+          Opposite the recording functionality you find a series of diamonds. By default they&apos;re orange. This means that the track is <strong>active</strong> and the act of recording will add new data to the track. Click on a diamond to toggle its ability to record. <span id="ctrl-or-command"></span> + click a diamond to toggle all tracks. This is handy to solo a track.
         </p>
         <p>
           Finally, you can <span id="export" class="action">export</span> and <span id="import" class="action">import</span> data as JSON with the below text field:
@@ -114,6 +114,9 @@
         elem.style.display = 'inline-block';
         elem.style.margin = '20px';
         elem.style.border = '1px solid #ccc';
+
+        document.querySelector('#ctrl-or-command').textContent
+          = /mac/i.test(window.navigator.platform) ? 'cmd' : 'ctrl';
 
         elem.addEventListener('drop', function(e) {
 
