@@ -19,7 +19,8 @@
       padding: 0,
       margin: 20 + 'px',
       marginTop: 0,
-      cursor: 'ns-resize'
+      cursor: 'ns-resize',
+      userSelect: 'none'
     });
 
     this.layers = {
@@ -29,7 +30,7 @@
       labels: two.makeGroup()
     };
 
-    var i, line, x, y, text;
+    var i, line, x, y, text, dot, radius = 3;
 
     for (i = 0; i < Equalizer.Resolution; i++) {
 
@@ -39,44 +40,87 @@
       y = two.height / 2;
       line = new Two.Line(x, - y, x, y);
 
-      line.noFill().stroke = Timeline.Colors.lightGray;
+      line.noFill().stroke = Equalizer.Colors['eee'];
       this.layers.backdrop.add(line);
 
       this.tracks.push(new Timeline.Track(this, i));
+
+      dot = this.tracks[this.tracks.length - 1].shape
+        = new Two.Rectangle(x, 0, radius * 2, radius * 2);
+      dot.rotation = Math.PI / 4;
+      dot.noStroke().fill = Equalizer.Colors['gold'];
+
+      this.layers.labels.add(dot);
+      two.update();
+
+      dot.toggle = Timeline.toggleTrack(this.tracks[this.tracks.length - 1]);
+      dot._renderer.elem.addEventListener('click', dot.toggle, false);
+      dot._renderer.elem.style.cursor = 'pointer';
 
     }
 
     x = two.width / 2;
     y = Timeline.Padding - two.height / 2;
 
+    this.layers.labels.background = new Two.Rectangle(
+      0, (Timeline.Padding - two.height) / 2, two.width, Timeline.Padding);
+    this.layers.labels.background.noStroke();
+    this.layers.labels.background.fill = Equalizer.Colors.white;
+    this.layers.labels.add(this.layers.labels.background);
+
     this.needle = new Two.Line(- x, y, x, y);
-    this.needle.noFill().stroke = Timeline.Colors.gray;
+    this.needle.noFill().stroke = Equalizer.Colors['888'];
     this.layers.labels.add(this.needle);
 
-    this.time = new Two.Text(Equalizer.Utils.formatSeconds(0), - x, y - Equalizer.Utils.defaultStyles.font.leading / 2, Equalizer.Utils.defaultStyles.font);
+    this.time = new Two.Text(
+      Equalizer.Utils.formatSeconds(0),
+      - x, y - Equalizer.Utils.defaultStyles.font.leading / 2,
+      Equalizer.Utils.defaultStyles.font);
     this.time.alignment = 'left';
     this.layers.labels.add(this.time);
 
-    this.duration = new Two.Text(Equalizer.Utils.formatSeconds(0), x, y - Equalizer.Utils.defaultStyles.font.leading / 2, Equalizer.Utils.defaultStyles.font);
+    this.duration = new Two.Text(
+      Equalizer.Utils.formatSeconds(0),
+      x, y - Equalizer.Utils.defaultStyles.font.leading / 2,
+      Equalizer.Utils.defaultStyles.font);
     this.duration.alignment = 'right';
-    this.duration.fill = '#bbb';
+    this.duration.fill = Equalizer.Colors['bbb'];
     this.layers.labels.add(this.duration);
 
     this.recording = document.createElement('div');
     this.recording.classList.add('recording');
 
     Object.defineProperty(this.recording, 'enabled', {
+
       get: function() {
         return this._enabled;
       },
+
       set: function(v) {
+
         this._enabled = !!v;
-        this.style.background = this._enabled ? 'rgb(255, 50, 50)' : '#888';
+
+        this.style.background = Equalizer.Colors[
+          this._enabled ? 'red' : '888'];
         this.style.top = (this._enabled ? two.height - 10 : 10) + 'px';
-        scope.needle.translation.y = this._enabled ? two.height / 2 : Timeline.Padding - two.height / 2;
-        scope.time.translation.y = scope.needle.translation.y - Equalizer.Utils.defaultStyles.font.leading / 2;
+
+        var bottom = two.height / 2;
+        var top = Timeline.Padding - two.height / 2;
+
+        scope.needle.translation.y = this._enabled ? bottom: top;
+        scope.time.translation.y = scope.needle.translation.y
+          - Equalizer.Utils.defaultStyles.font.leading / 2;
         scope.duration.translation.y = scope.time.translation.y;
+
+        for (var i = 0; i < scope.tracks.length; i++) {
+          var track = scope.tracks[i];
+          var shape = track.shape;
+          shape.translation.y = this._enabled
+            ? (top + radius) : (bottom - radius);
+        }
+
       }
+
     });
 
     Equalizer.Utils.extend(this.recording.style, Equalizer.Utils.defaultStyles.recording);
@@ -84,7 +128,7 @@
 
     for (i = 0; i < Timeline.Resolution; i++) {
       var shape = new Two.Line(0, 0, 0, 0);
-      shape.stroke = Timeline.Colors.blue;
+      shape.stroke = Equalizer.Colors.blue;
       shape.linewidth = 4;
       shape.cap = 'round';
       shape.visible = false;
@@ -99,21 +143,43 @@
 
   Equalizer.Utils.extend(Timeline, {
 
-    Colors: {
-      lightGray: '#eee',
-      gray: '#888',
-      blue: 'rgb(50, 150, 255)',
-      purple: 'rgb(150, 50, 255)',
-      orange: 'orange'
-    },
-
-    Resolution: 512,
+    Resolution: 128,
 
     Atomic: 0.33,
 
     Padding: 20,
 
     Viscosity: 0.125,  // Seconds
+
+    toggleTrack: function(track) {
+
+      var dot = track.shape;
+      var timeline = track.timeline;
+
+      return function(e) {
+ 
+        var gold = Equalizer.Colors['gold'];
+        var gray = Equalizer.Colors['ccc'];
+
+        track.active = !track.active;
+        dot.fill = track.active ? gold : gray;
+
+        if (!e.ctrlKey) {
+          return;
+        }
+
+        for (var i = 0; i < timeline.tracks.length; i++) {
+          var t = timeline.tracks[i];
+          if (track.index === i) {
+            continue;
+          }
+          t.active = !track.active;
+          t.shape.fill = t.active ? gold : gray;
+        }
+
+      };
+
+    },
 
     addInteraction: function() {
 
@@ -169,13 +235,40 @@
 
       var keydown = function(e) {
 
-        var triggered = false;
+        if (e.ctrlKey || e.altKey) {
+          return;
+        }
 
-        switch (String.fromCharCode(e.which)) {
+        var triggered = false;
+        var code = String.fromCharCode(e.which).toLowerCase();
+
+        switch (code) {
 
           case ' ':
             triggered = true;
             scope.sound[scope.sound.playing ? 'pause' : 'play']();
+            break;
+
+          case 'r':
+            triggered = true;
+            scope.recording.enabled = !scope.recording.enabled;
+            break;
+
+          case '\b':
+            triggered = true;
+            scope.sound.currentTime = 0;
+            break;
+
+          case '\t':
+            triggered = true;
+            var playing = scope.sound.playing;
+            if (playing) {
+              scope.sound.pause();
+            }
+            scope.sound.currentTime -= scope.range;
+            if (playing) {
+              scope.sound.play();
+            }
             break;
 
         }
@@ -255,22 +348,8 @@
             && (unit.time > (currentTime - this.range)
               || unit.value > (currentTime - this.range))) {
 
-            var shape = this.layers.stage.children[id];
-            var ypct = (unit.time - currentTime) / this.range;
-
             if (unit.time < currentTime) {
-              shape.visible = true;
-              shape.translation.x = two.width * pct - two.width / 2;
-              shape.translation.y = two.height * ypct + this.needle.translation.y;
-              switch (unit.type) {
-                case Timeline.Unit.Types.hold:
-                  shape.vertices[1].y = two.height * (unit.value - unit.time)
-                    / this.range;
-                  break;
-                default:
-                  shape.vertices[1].y = 0;
-                  shape.stroke = Timeline.Colors.blue;
-              }
+              this.draw(track, unit, id, currentTime, pct);
               id++;
             }
 
@@ -290,21 +369,8 @@
             && (unit.time < (currentTime + this.range)
               || unit.value < (currentTime + this.range))) {
 
-            var shape = this.layers.stage.children[id];
-            var ypct = (unit.time - currentTime) / this.range;
-
             if (unit.time > currentTime || unit.value > currentTime) {
-              shape.visible = true;
-              shape.translation.x = two.width * pct - two.width / 2;
-              shape.translation.y = two.height * ypct + this.needle.translation.y;
-              switch (unit.type) {
-                case Timeline.Unit.Types.hold:
-                  shape.vertices[1].y = two.height * (unit.value - unit.time)
-                    / this.range;
-                  break;
-                default:
-                  shape.vertices[1].y = 0;
-              }
+              this.draw(track, unit, id, currentTime, pct);
               id++;
             }
 
@@ -324,6 +390,30 @@
 
       if (!silent) {
         this.two.update();
+      }
+
+      return this;
+
+    },
+
+    draw: function(track, unit, id, currentTime, pct) {
+
+      var two = this.two;
+      var shape = this.layers.stage.children[id];
+      var ypct = (unit.time - currentTime) / this.range;
+
+      shape.visible = true;
+      shape.translation.x = two.width * pct - two.width / 2;
+      shape.translation.y = two.height * ypct + this.needle.translation.y;
+      shape.opacity = track.active ? 1 : 0.33;
+
+      switch (unit.type) {
+        case Timeline.Unit.Types.hold:
+          shape.vertices[1].y = two.height * (unit.value - unit.time)
+            / this.range;
+          break;
+        default:
+          shape.vertices[1].y = 0;
       }
 
       return this;
@@ -377,7 +467,13 @@
 
   Equalizer.Utils.extend(Timeline.Track.prototype, {
 
+    active: true,
+
     add: function(time) {
+
+      if (!this.active) {
+        return this;
+      }
 
       if (this.elements.length <= 0) {
         this.elements.push(new Timeline.Unit(time, true));

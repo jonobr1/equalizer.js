@@ -5,11 +5,26 @@
 
   var root = this;
   var previousEqualizer = root.Equalizer || {};
+  var Colors = {
+    'eee': '#eee',
+    'ccc': '#ccc',
+    'bbb': '#bbb',
+    '888': '#888',
+    'black': 'black',
+    'green': 'rgb(100, 255, 100)',
+    'blue': 'rgb(50, 150, 255)',
+    'purple': 'rgb(150, 50, 255)',
+    'pink': 'rgb(255, 100, 100)',
+    'red': 'rgb(255, 50, 50)',
+    'orange': 'orange',
+    'gold': 'rgb(255, 150, 50)',
+    'white': 'white'
+  };
   var styles = {
     font: {
       family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
       size: 11,
-      fill: '#888',
+      fill: Colors['888'],
       leading: 20,
       weight: 500
     },
@@ -29,7 +44,7 @@
       marginLeft: - 4 + 'px',
       marginTop: - 4 + 'px',
       cursor: 'pointer',
-      background: '#ccc',
+      background: Colors['ccc'],
       content: ''
     }
   };
@@ -59,7 +74,7 @@
       band.value = 0;
       band.linewidth = (two.width / Equalizer.Resolution) * 0.85;
 
-      band.stroke = '#bbb';
+      band.stroke = Colors['bbb'];
       band.noFill();
       band.opacity = 0.5;
 
@@ -68,19 +83,19 @@
 
       band.peak.value = 0;
       band.peak.updated = false;
-      band.peak.stroke = '#888';
+      band.peak.stroke = Colors['888'];
       band.peak.noFill();
       band.peak.linewidth = 2;
 
       band.beat = new Two.Ellipse(x, two.height * 0.125, 2, 2);
       band.beat.noStroke();
-      band.beat.fill = 'rgb(50, 150, 255)';
+      band.beat.fill = Colors.blue;
 
       band.direction = new Two.Line(x - band.linewidth / 2, 0,
         x + band.linewidth / 2, 0);
 
       band.direction.value = 0;
-      band.direction.stroke = 'rgb(255, 50, 50)';
+      band.direction.stroke = Colors.red;
       band.direction.noFill();
       band.direction.linewidth = 2;
 
@@ -90,7 +105,7 @@
 
       anchor.outlier = new Two.Ellipse(0, 0, 1, 1);
       anchor.outlier.noStroke();
-      anchor.outlier.fill = 'rgb(150, 50, 255)';
+      anchor.outlier.fill = Colors.purple;
 
       two.add(band, band.peak, band.beat, band.direction);
       this.bands.push(band);
@@ -98,7 +113,8 @@
     }
 
     this.average = new Two.Path(vertices, false, true);
-    this.average.stroke = 'rgba(255, 150, 50, 0.85)';
+    this.average.stroke = Colors.gold;
+    this.average.opacity = 0.85;
     this.average.cap = 'round';
     this.average.linewidth = 1;
     this.average.noFill();
@@ -143,7 +159,9 @@
       formatSeconds: formatSeconds,
       defaultStyles: styles
 
-    }
+   },
+
+   Colors: Colors
 
   });
 
@@ -166,6 +184,8 @@
         var two = this.two;
         this.timeline = new Equalizer.Timeline(this, two.width, two.width * 1.5)
           .appendTo(container);
+
+        this.two.renderer.domElement.style.paddingBottom = 10 + 'px';
 
         this.timeline.analyze(sound, json);
 
@@ -218,8 +238,8 @@
           band.beat.updated = false;
         }
 
-        band.direction.stroke = band.direction.value <= 0 ? 'rgb(255, 100, 100)'
-          : 'rgb(100, 255, 100)';
+        band.direction.stroke = band.direction.value <= 0 ? Colors.pink
+          : Colors.green;
 
         y = two.height - height * (band.value / Equalizer.amplitude);
         band.vertices[0].y = two.height;
@@ -233,7 +253,8 @@
         anchor.value = anchor.sum / this.average.index;
         anchor.y = two.height - height * anchor.value / Equalizer.amplitude;
 
-        if (Math.abs(band.value - anchor.value) > Equalizer.amplitude * Equalizer.threshold) {
+        if (Math.abs(band.value - anchor.value)
+          > Equalizer.amplitude * Equalizer.threshold) {
           anchor.outlier.scale = 2;
           anchor.outlier.updated = true;
         } else {
