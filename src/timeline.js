@@ -143,7 +143,7 @@
 
   Equalizer.Utils.extend(Timeline, {
 
-    Resolution: 128,
+    Resolution: 256,
 
     Atomic: 0.33,
 

@@ -68,9 +68,6 @@
         padding: 10px;
         margin: 10px 0 0 0;
       }
-      .published {
-        font-style: italic;
-      }
     </style>
   </head>
   <body>
@@ -101,20 +98,12 @@
           <br />
           <textarea width="300" height="200"></textarea>
         </p>
-        <br />
-      </div>
-      <div id="post-scriptum" class="column">
-        <br />
-        <br />
-        <br />
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-        <p>
-          Published <span id="published-date">November 30<sup>th</sup>, 2016</span>.
+        <p id="post-scriptum">
+            Created <span id="created-date"></span> and updated <span id="updated-date"></span>.
+            <br />
+            By <a href="http://jonobr1.com/" target="_blank">jonobr1</a> with <a href="https://two.js.org/" target="_blank">Two.js</a>
           <br />
-          By <a href="http://jonobr1.com/" target="_blank">jonobr1</a> with <a href="https://two.js.org/" target="_blank">Two.js</a>
         </p>
-        <br />
       </div>
     </div>
     <div class="scripts">
@@ -143,8 +132,10 @@
             return;
           }
           var resp = JSON.parse(xhr.responseText);
-          document.querySelector('#published-date').innerHTML
+          document.querySelector('#updated-date').innerHTML
             = formatDate(resp.pushed_at);
+          document.querySelector('#created-date').innerHTML
+            = formatDate(resp.created_at);
         };
         xhr.send();
 
@@ -233,13 +224,20 @@
 
         function formatDate(time) {
           var date = new Date(time);
+          var suffices = ['st', 'nd', 'rd'];
+          suffices.getIndex = function(n) {
+            var index = parseInt((n + '').slice(-1));
+            return index - 1;
+          };
           var months = ['January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'];
           return [
             months[date.getMonth()],
             ' ',
             date.getDate(),
-            '<sup>th</sup>, ',
+            '<sup>',
+            suffices[suffices.getIndex(date.getDate())] || 'th',
+            '</sup>, ',
             date.getFullYear()
           ].join('')
         }
