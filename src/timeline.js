@@ -34,7 +34,7 @@
       labels: two.makeGroup()
     };
 
-    var i, line, x, y, text, dot, radius = 3;
+    var i, line, x, y, text, diamond, radius = 3;
 
     for (i = 0; i < Equalizer.Resolution; i++) {
 
@@ -49,17 +49,12 @@
 
       this.tracks.push(new Timeline.Track(this, i));
 
-      dot = this.tracks[this.tracks.length - 1].shape
+      diamond = this.tracks[this.tracks.length - 1].diamond
         = new Two.Rectangle(x, 0, radius * 2, radius * 2);
-      dot.rotation = Math.PI / 4;
-      dot.noStroke().fill = Equalizer.Colors['gold'];
+      diamond.rotation = Math.PI / 4;
+      diamond.noStroke().fill = Equalizer.Colors['gold'];
 
-      this.layers.labels.add(dot);
-      two.update();
-
-      dot.toggle = Timeline.toggleTrack(this.tracks[this.tracks.length - 1]);
-      dot._renderer.elem.addEventListener('click', dot.toggle, false);
-      dot._renderer.elem.style.cursor = 'pointer';
+      this.layers.labels.add(diamond);
 
     }
 
@@ -118,7 +113,7 @@
 
         for (var i = 0; i < scope.tracks.length; i++) {
           var track = scope.tracks[i];
-          var shape = track.shape;
+          var shape = track.diamond;
           shape.translation.y = this._enabled
             ? (top + radius) : (bottom - radius);
         }
@@ -141,8 +136,6 @@
 
     two.scene.translation.set(two.width / 2, two.height / 2);
 
-    Timeline.addInteraction.call(this);
-
   };
 
   Equalizer.Utils.extend(Timeline, {
@@ -157,7 +150,7 @@
 
     toggleTrack: function(track) {
 
-      var dot = track.shape;
+      var diamond = track.diamond;
       var timeline = track.timeline;
 
       return function(e) {
@@ -166,7 +159,7 @@
         var gray = Equalizer.Colors['ccc'];
 
         track.active = !track.active;
-        dot.fill = track.active ? gold : gray;
+        diamond.fill = track.active ? gold : gray;
 
         if (!e.ctrlKey) {
           return;
@@ -178,7 +171,7 @@
             continue;
           }
           t.active = !track.active;
-          t.shape.fill = t.active ? gold : gray;
+          t.diamond.fill = t.active ? gold : gray;
         }
 
       };
@@ -283,11 +276,50 @@
 
       };
 
+      var clickedShape;
+
+      var clickShape = function(e) {
+
+        if (scope.sound.playing) {
+          return;
+        }
+
+        var shape = clickedShape = this.shape;
+        var unit = shape.unit;
+        shape.stroke = Equalizer.Colors.purple;
+
+      };
+
+      window.addEventListener('mouseup', function() {
+        if (!clickedShape) {
+          return;
+        }
+        clickedShape.stroke = Equalizer.Colors.blue;
+      }, false);
+
       this.recording.addEventListener('click', function() {
         scope.recording.enabled = !scope.recording.enabled;
       }, false);
       stage.addEventListener('mousedown', mousedown, false);
       window.addEventListener('keydown', keydown, false);
+
+      this.two.update();
+
+      for (var i = 0; i < Timeline.Resolution; i++) {
+
+        if (i < this.tracks.length) {
+          var diamond = this.tracks[i].diamond;
+          diamond.toggle = Timeline.toggleTrack(this.tracks[this.tracks.length - 1]);
+          diamond._renderer.elem.addEventListener('click', diamond.toggle, false);
+          diamond._renderer.elem.style.cursor = 'pointer';
+        }
+
+        var shape = this.layers.stage.children[i];
+        shape._renderer.elem.shape = shape;
+        shape._renderer.elem.addEventListener('click', clickShape, false);
+        shape._renderer.elem.style.cursor = 'pointer';
+
+      }
 
     }
 
@@ -301,6 +333,7 @@
     appendTo: function(elem) {
       this.two.appendTo(elem);
       elem.appendChild(this.recording);
+      Timeline.addInteraction.call(this);
       return this;
     },
 
@@ -409,6 +442,7 @@
       shape.translation.x = two.width * pct - two.width / 2;
       shape.translation.y = two.height * ypct + this.needle.translation.y;
       shape.opacity = track.active ? 1 : 0.33;
+      shape.unit = unit;
 
       switch (unit.type) {
         case Timeline.Unit.Types.hold:
