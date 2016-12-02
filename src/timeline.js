@@ -47,7 +47,7 @@
       line.noFill().stroke = Equalizer.Colors['eee'];
       this.layers.backdrop.add(line);
 
-      this.tracks.push(new Timeline.Track(this, i));
+      this.tracks.push(new Track(this, i));
 
       diamond = this.tracks[this.tracks.length - 1].diamond
         = new Two.Rectangle(x, 0, radius * 2, radius * 2);
@@ -163,8 +163,6 @@
       var diamond = track.diamond;
       var timeline = track.timeline;
 
-      console.log(track);
-
       return function(e) {
 
         var gold = Equalizer.Colors['gold'];
@@ -197,10 +195,15 @@
       var stage = this.two.renderer.domElement;
 
       stage.addEventListener('mousewheel', function(e) {
+
         e.preventDefault();
         e.stopPropagation();
+
+        deselectShape();
+
         var dy = e.deltaY / two.height;
         scope.range = Math.max(Math.min(scope.range + dy, scope.sound.duration), Timeline.Atomic);
+
       }, false);
 
       var mouse = new Two.Vector();
@@ -223,6 +226,8 @@
 
         e.preventDefault();
 
+        deselectShape();
+
         var rect = stage.getBoundingClientRect();
         var x = e.clientX - rect.left;
         var y = e.clientY - rect.top;
@@ -244,7 +249,8 @@
 
       var keydown = function(e) {
 
-        if (e.ctrlKey || e.altKey || e.metaKey) {
+        if (e.ctrlKey || e.altKey
+          || e.metaKey || childOf(e.target, Unit.inputField)) {
           return;
         }
 
@@ -296,28 +302,43 @@
 
       };
 
-      var clickedShape;
-
-      var clickShape = function(e) {
+      var selectShape = function(e) {
 
         if (scope.sound.playing) {
           return;
         }
 
-        var shape = clickedShape = this.shape;
+        var shape = selectShape.clicked = this.shape;
         var unit = shape.unit;
         shape.stroke = Equalizer.Colors.purple;
 
-        // TODO: Add some editing features on the unit.
+        var position = shape.getBoundingClientRect();
+        var offset = scope.two.renderer.domElement.getBoundingClientRect();
+        var scrollTop = document.body.scrollTop;
+        var scrollLeft = document.body.scrollLeft;
+
+        Unit.inputField.set(unit);
+
+        Equalizer.Utils.extend(Unit.inputField.style, {
+          display: 'block',
+          top: (position.height / 2 + position.top + offset.top + scrollTop) + 'px',
+          left: (position.left + offset.left + scrollLeft) + 'px'
+        });
+
+      };
+      selectShape.clicked = null;
+
+      var deselectShape = Unit.inputField.deselectShape = function(e) {
+
+        if (!selectShape.clicked || (e && childOf(e.target, Unit.inputField))) {
+          return;
+        }
+        selectShape.clicked.stroke = Equalizer.Colors.blue;
+        Unit.inputField.style.display = 'none';
 
       };
 
-      window.addEventListener('mouseup', function() {
-        if (!clickedShape) {
-          return;
-        }
-        clickedShape.stroke = Equalizer.Colors.blue;
-      }, false);
+      window.addEventListener('mouseup', deselectShape, false);
 
       this.recording.addEventListener('click', function() {
         scope.recording.enabled = !scope.recording.enabled;
@@ -338,7 +359,7 @@
 
         var shape = this.layers.stage.children[i];
         shape._renderer.elem.shape = shape;
-        shape._renderer.elem.addEventListener('click', clickShape, false);
+        shape._renderer.elem.addEventListener('click', selectShape, false);
         shape._renderer.elem.style.cursor = 'pointer';
 
       }
@@ -356,6 +377,7 @@
       this.two.appendTo(elem);
       elem.appendChild(this.recording);
       Timeline.addInteraction.call(this);
+      document.body.appendChild(Unit.inputField);
       return this;
     },
 
@@ -469,7 +491,7 @@
       shape.unit = unit;
 
       switch (unit.type) {
-        case Timeline.Unit.Types.hold:
+        case Unit.Types.hold:
           shape.vertices[1].y = two.height * (unit.value - unit.time)
             / this.range;
           break;
@@ -523,7 +545,7 @@
 
   });
 
-  Timeline.Track = function(timeline, i) {
+  var Track = Timeline.Track = function(timeline, i) {
 
     this.timeline = timeline;
     this.index = i;
@@ -532,7 +554,15 @@
 
   };
 
-  Equalizer.Utils.extend(Timeline.Track.prototype, {
+  Equalizer.Utils.extend(Track, {
+
+    SortComparator: function(a, b) {
+      return a.time - b.time;
+    }
+
+  });
+
+  Equalizer.Utils.extend(Track.prototype, {
 
     active: true,
 
@@ -543,7 +573,7 @@
       }
 
       if (this.elements.length <= 0) {
-        this.elements.push(new Timeline.Unit(time, true));
+        this.elements.push(new Unit(this, time, true));
         return this;
       }
 
@@ -553,16 +583,16 @@
       var i;
 
       if (Math.abs(time - ref.time) < Timeline.Viscosity
-        || (ref.type === Timeline.Unit.Types.hold
+        || (ref.type === Unit.Types.hold
           && Math.abs(time - ref.value) < Timeline.Viscosity)) {
 
-        ref.type = Timeline.Unit.Types.hold;
+        ref.type = Unit.Types.hold;
         ref.value = time;
         return this;
 
       }
 
-      var unit = new Timeline.Unit(time, true);
+      var unit = new Unit(this, time, true);
 
       if (time > ref.time) {
         for (i = index; i < length; i++) {
@@ -655,9 +685,13 @@
 
     toJSON: function() {
       var resp = [];
+      this.elements = this.elements.sort(Track.SortComparator);
       for (var i = 0; i < this.elements.length; i++) {
         var el = this.elements[i];
-        resp.push({ t: el.time, v: el.value });
+        resp.push({
+          t: el.time,
+          v: el.type === Unit.Types.beat ? !!el.value : el.value
+        });
       }
       return resp;
     },
@@ -667,9 +701,9 @@
       this.elements.index = 0;
       for (var i = 0; i < list.length; i++) {
         var el = list[i];
-        var unit = new Timeline.Unit(el.t, el.v);
+        var unit = new Unit(this, el.t, el.v);
         if (typeof el.v === 'number') {
-          unit.type = Timeline.Unit.Types.hold;
+          unit.type = Unit.Types.hold;
         }
         this.elements.push(unit);
       }
@@ -678,28 +712,181 @@
 
   });
 
-  Timeline.Unit = function(time, value) {
+  var Unit = Timeline.Unit = function(track, time, value) {
 
+    this.track = track;
     this.time = time || 0;
     this.value = value || true;
 
   };
 
-  Equalizer.Utils.extend(Timeline.Unit, {
+  Equalizer.Utils.extend(Unit, {
 
     Types: {
       beat: 'beat',
       hold: 'hold'
+    },
+
+    inputField: document.createElement('div'),
+
+    Utils: {
+      defaultStyles: {
+        font: {
+          fontSize: 10 + 'px',
+          lineHeight: 14 + 'px'
+        }
+      }
     }
 
   });
 
-  Equalizer.Utils.extend(Timeline.Unit.prototype, {
+  setup();
 
-    type: Timeline.Unit.Types.beat,
-    time: 0,
-    value: false
+  function setup() {
 
-  });
+    Unit.inputField.classList.add('timeline-unit-input-field');
+    Unit.inputField.elems = {
+      type: createField('type', Unit.Types),
+      time: createField('time', 0),
+      value: createField('value', true),
+      remove: createField('remove', function() {
+        if (!Unit.inputField.unit || !Unit.inputField.unit.track) {
+          return;
+        }
+        Unit.inputField.unit.track.remove(Unit.inputField.unit);
+        if (Unit.inputField.deselectShape) {
+          Unit.inputField.deselectShape();
+        }
+      })
+    };
+
+    var list = [];
+
+    for (var prop in Unit.inputField.elems) {
+      var elem = Unit.inputField.elems[prop];
+      Unit.inputField.appendChild(elem);
+      list.push(elem);
+    }
+
+    Unit.inputField.elems.list = list;
+
+    Equalizer.Utils.extend(Unit.inputField.style,
+      Equalizer.Utils.defaultStyles.font, Unit.Utils.defaultStyles.font, {
+      display: 'none',
+      position: 'absolute',
+      width: 120 + 'px',
+      height: (18 * Unit.inputField.elems.list.length) + 'px',
+      padding: 10 + 'px',
+      border: '1px solid ' + Equalizer.Colors['ccc'],
+      marginTop: - (2 + 20 + 18 * Unit.inputField.elems.list.length) / 2 + 'px',
+      marginLeft: (1 + 10) + 'px',
+      background: Equalizer.Colors['white']
+    });
+
+    Equalizer.Utils.extend(Unit.prototype, {
+
+      type: Unit.Types.beat,
+      time: 0,
+      value: false
+
+    });
+
+    Unit.inputField.set = function(unit) {
+      Unit.inputField.unit = unit;
+      for (var i = 0; i < Unit.inputField.elems.type.input.children.length; i++) {
+        var option = Unit.inputField.elems.type.input.children[i];
+        option.selected = option.value === unit.type;
+      }
+      Unit.inputField.elems.time.input.value = unit.time;
+      Unit.inputField.elems.value.input.value = unit.value;
+    };
+
+  }
+
+  function createField(title, value) {
+
+    var container = document.createElement('div');
+    container.classList.add(title);
+
+    var label = document.createElement('label');
+    label.for = 'unit-' + title;
+    label.innerHTML = title;
+
+    var input;
+
+    if (typeof value === 'function') {
+
+      input = document.createElement('button');
+      input.innerHTML = title;
+      input.addEventListener('click', value, false);
+      input.style.cursor = 'pointer';
+      label.innerHTML = '';
+
+    } else if (typeof value === 'object') {
+
+      input = document.createElement('select');
+
+      for (var k in value) {
+
+        var option = document.createElement('option');
+        option.value = value[k];
+        option.innerHTML = option.value;
+
+        if (option.value === Unit.Types.beat) {
+          option.selected = true;
+        }
+
+        input.appendChild(option);
+
+      }
+
+    } else {
+
+      input = document.createElement('input');
+
+    }
+
+    input.addEventListener('change', function(e) {
+      Unit.inputField.unit[title] = this.value;
+    }, false);
+
+    input.id = label.for;
+    Equalizer.Utils.extend(label.style, {
+      display: 'inline-block',
+      width: 25 + '%',
+      textOverflow: 'ellipsis',
+      overflow: 'hidden',
+      textTransform: 'capitalize'
+    });
+    Equalizer.Utils.extend(input.style, Unit.Utils.defaultStyles.font, {
+      display: 'inline-block',
+      height: 12 + 'px',
+      width: 66 + '%',
+      overflow: 'hidden',
+      textTransform: 'capitalize'
+    });
+
+    container.appendChild(label);
+    container.appendChild(input);
+
+    container.label = label;
+    container.input = input;
+
+    return container;
+
+  }
+
+  function childOf(a, b) {
+
+    while (a) {
+      if (a === b) {
+        return true;
+      }
+      a = a.parentElement;
+    }
+
+    return false;
+
+  }
 
 })();
