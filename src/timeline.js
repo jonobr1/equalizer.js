@@ -125,6 +125,16 @@
     Equalizer.Utils.extend(this.recording.style, Equalizer.Utils.defaultStyles.recording);
     this.recording.enabled = false;
 
+    this.warning = new Two.Text(
+      'Warning: Units Occluded',
+      0, y + Equalizer.Utils.defaultStyles.font.leading,
+      Equalizer.Utils.defaultStyles.font
+    );
+    this.warning.fill = Equalizer.Colors.red;
+    this.warning.visible = false;
+
+    this.layers.labels.add(this.warning);
+
     for (i = 0; i < Timeline.Resolution; i++) {
       var shape = new Two.Line(0, 0, 0, 0);
       shape.stroke = Equalizer.Colors.blue;
@@ -288,6 +298,8 @@
         var unit = shape.unit;
         shape.stroke = Equalizer.Colors.purple;
 
+        // TODO: Add some editing features on the unit.
+
       };
 
       window.addEventListener('mouseup', function() {
@@ -418,6 +430,8 @@
         }
 
       }
+
+      this.warning.visible = id >= Timeline.Resolution;
 
       for (i = id; i < Timeline.Resolution; i++) {
         var shape = this.layers.stage.children[i];
