@@ -163,6 +163,8 @@
       var diamond = track.diamond;
       var timeline = track.timeline;
 
+      console.log(track);
+
       return function(e) {
 
         var gold = Equalizer.Colors['gold'];
@@ -171,7 +173,7 @@
         track.active = !track.active;
         diamond.fill = track.active ? gold : gray;
 
-        if (!e.ctrlKey) {
+        if (!(e.ctrlKey || e.metaKey)) {
           return;
         }
 
@@ -242,7 +244,7 @@
 
       var keydown = function(e) {
 
-        if (e.ctrlKey || e.altKey) {
+        if (e.ctrlKey || e.altKey || e.metaKey) {
           return;
         }
 
@@ -329,7 +331,7 @@
 
         if (i < this.tracks.length) {
           var diamond = this.tracks[i].diamond;
-          diamond.toggle = Timeline.toggleTrack(this.tracks[this.tracks.length - 1]);
+          diamond.toggle = Timeline.toggleTrack(this.tracks[i]);
           diamond._renderer.elem.addEventListener('click', diamond.toggle, false);
           diamond._renderer.elem.style.cursor = 'pointer';
         }
