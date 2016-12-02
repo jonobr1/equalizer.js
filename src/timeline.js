@@ -164,7 +164,7 @@
       var timeline = track.timeline;
 
       return function(e) {
- 
+
         var gold = Equalizer.Colors['gold'];
         var gray = Equalizer.Colors['ccc'];
 
