@@ -1,3 +1,7 @@
+/**
+ * @jonobr1 / http://jonobr1.com/
+ */
+
 (function() {
 
   var root = this;
@@ -143,7 +147,7 @@
 
   Equalizer.Utils.extend(Timeline, {
 
-    Resolution: 256,
+    Resolution: 128,
 
     Atomic: 0.33,
 
@@ -366,8 +370,7 @@
           }
 
           while (id < Timeline.Resolution && unit
-            && (unit.time < (currentTime + this.range)
-              || unit.value < (currentTime + this.range))) {
+            && (unit.time < (currentTime + this.range))) {
 
             if (unit.time > currentTime || unit.value > currentTime) {
               this.draw(track, unit, id, currentTime, pct);
