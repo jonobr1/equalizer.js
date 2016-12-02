@@ -106,6 +106,11 @@
 
       ctx.decodeAudioData(data, success, error);
 
+    },
+
+    Utils: {
+      extend: extend,
+      defaults: defaults
     }
 
   });
@@ -242,6 +247,8 @@
 
   Object.defineProperty(Sound.prototype, 'loop', {
 
+    enumerable: true,
+
     get: function() {
       return this._loop;
     },
@@ -256,6 +263,8 @@
   });
 
   Object.defineProperty(Sound.prototype, 'volume', {
+
+    enumerable: true,
 
     get: function() {
       return this._volume;
@@ -272,6 +281,8 @@
 
   Object.defineProperty(Sound.prototype, 'speed', {
 
+    enumerable: true,
+
     get: function() {
       return this._speed;
     },
@@ -286,6 +297,8 @@
   });
 
   Object.defineProperty(Sound.prototype, 'currentTime', {
+
+    enumerable: true,
 
     get: function() {
       return this.playing ? (ctx.currentTime - this._startTime + this._offset) * this._speed : this._offset;
@@ -317,6 +330,8 @@
 
   Object.defineProperty(Sound.prototype, 'millis', {
 
+    enumerable: true,
+
     get: function() {
       return Math.floor(this.currentTime * 1000);
     }
@@ -324,6 +339,8 @@
   });
 
   Object.defineProperty(Sound.prototype, 'duration', {
+
+    enumerable: true,
 
     get: function() {
       if (!this.buffer) {

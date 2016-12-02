@@ -46,6 +46,10 @@
       p + p {
         margin-top: 10px;
       }
+      ul {
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
       .explanation {
         cursor: help;
       }
@@ -74,14 +78,14 @@
     <div id="content">
       <div id="tool" class="column"></div>
       <div id="description" class="column">
-        <h1>Equalizer</h1>
+        <h1 id="title">Equalizer</h1>
         <p>
           <span class="symbols">O</span>An audio analysis tool for real-time and choreographed visualizations.
         </p>
-        <p>
+        <p id="links">
           <a href="http://github.com/jonobr1/equalizer">Source Code</a> &middot; <a href="https://github.com/jonobr1/equalizer/blob/master/license.txt" target="_blank">MIT</a>
         </p>
-        <p>
+        <p id="instructions">
           Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray box. Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed. Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands">16</span> bands representing different amplitudes at equally spaced frequency bandwidths.
         </p>
         <p>
@@ -98,6 +102,17 @@
           <br />
           <textarea width="300" height="200"></textarea>
         </p>
+<!--         <br />
+        <h2 id="examples">
+          Examples
+        </h2>
+        <p>
+          This page is one example of how to use Equalizer, but there are other ways it can be used. Check them out below:
+        </p>
+        <ul>
+          <li>Real-time Analysis</li>
+          <li>Choreographed Data</li>
+        </ul> -->
         <p id="post-scriptum">
             Created <span id="created-date"></span> and updated <span id="updated-date"></span>.
             <br />
@@ -109,6 +124,7 @@
     <div class="scripts">
       <script src="./third-party/two.js"></script>
       <script src="./third-party/sound.js"></script>
+      <script src="./third-party/sound-empty.js"></script>
       <script src="./src/equalizer.js"></script>
       <script src="./src/timeline.js"></script>
       <script>
@@ -177,13 +193,10 @@
         });
 
         document.querySelector('#spacebar').addEventListener('click', function() {
-          if (!sound) {
-            return;
-          }
-          if (sound.playing) {
-            sound.pause();
+          if (equalizer.sound.playing) {
+            equalizer.sound.pause();
           } else {
-            sound.play();
+            equalizer.sound.play();
           }
         }, false);
         document.querySelector('#record-button').addEventListener('click', function() {
@@ -200,11 +213,12 @@
           textarea.innerHTML = JSON.stringify(equalizer.timeline.toJSON());
         }, false);
         document.querySelector('#import').addEventListener('click', function() {
-          if (!equalizer.timeline) {
-            return;
-          }
           var textarea = document.querySelector('textarea');
-          equalizer.timeline.fromJSON(JSON.parse(textarea.value));
+          equalizer.analyze(sound, JSON.parse(textarea.value));
+          if (!loop.init) {
+            loop();
+            loop.init = true;
+          }
         }, false);
 
         equalizer.update();

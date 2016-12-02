@@ -437,7 +437,13 @@
 
     },
 
-    fromJSON: function(obj) {
+    fromJSON: function(json) {
+
+      var obj = json;
+
+      if (typeof json === 'string') {
+        obj = JSON.parse(json);
+      }
 
       for (var i = 0; i < this.tracks.length; i++) {
 

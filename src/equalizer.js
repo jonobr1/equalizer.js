@@ -172,26 +172,34 @@
       return this;
     },
 
+    createTimeline: function(timeline) {
+
+      var container = document.createElement('div');
+      container.style.position = 'relative';
+      elem.appendChild(container);
+
+      if (!timeline) {
+        this.timeline = new Equalizer.Timeline(
+          this, this.two.width, this.two.width * 1.5);
+      }
+      this.timeline.appendTo(container);
+
+      this.two.renderer.domElement.style.paddingBottom = 10 + 'px';
+
+      return this;
+
+    },
+
     analyze: function(sound, json) {
 
-      // TODO: Break this out to its own function..?
+      this.sound = sound instanceof Sound
+        ? sound : new Sound.Empty(json);
+
       if (!this.timeline) {
-
-        var container = document.createElement('div');
-        container.style.position = 'relative';
-        elem.appendChild(container);
-
-        var two = this.two;
-        this.timeline = new Equalizer.Timeline(this, two.width, two.width * 1.5)
-          .appendTo(container);
-
-        this.two.renderer.domElement.style.paddingBottom = 10 + 'px';
-
-        this.timeline.analyze(sound, json);
-
+        this.createTimeline();
       }
 
-      this.sound = sound;
+      this.timeline.analyze(this.sound, json);
 
       return this;
 
