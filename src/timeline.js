@@ -534,6 +534,26 @@
 
     },
 
+    remove: function(i) {
+
+      var unit;
+
+      if (typeof i !== 'number') {
+        unit = i;
+        i = this.elements.indexOf(unit);
+      }
+
+      if (i < 0) {
+        console.warn('Equalizer.Timeline: unable to remove item at index', i);
+        return this;
+      }
+
+      unit = this.elements.splice(i, 1)[0];
+
+      return unit;
+
+    },
+
     update: function(time) {
 
       if (this.elements.length <= 0) {
