@@ -263,7 +263,11 @@
 
           case '\b':
             triggered = true;
-            scope.sound.currentTime = 0;
+            if (e.shiftKey) {
+              scope.sound.currentTime = scope.sound.duration;
+            } else {
+              scope.sound.currentTime = 0;
+            }
             break;
 
           case '\t':
@@ -272,7 +276,11 @@
             if (playing) {
               scope.sound.pause();
             }
-            scope.sound.currentTime -= scope.range;
+            if (e.shiftKey) {
+              scope.sound.currentTime += scope.range;
+            } else {
+              scope.sound.currentTime -= scope.range;
+            }
             if (playing) {
               scope.sound.play();
             }
