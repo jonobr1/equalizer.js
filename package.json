@@ -1,0 +1,33 @@
+{
+  "name": "equalizer",
+  "version": "1.0.0",
+  "description": "An audio analysis tool for real-time and choreographed visualizations.",
+  "main": "build/equalizer.js",
+  "scripts": {
+    "test": "node ./utils/test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonobr1/equalizer.git"
+  },
+  "keywords": [
+    "audio",
+    "visual",
+    "visualization",
+    "html5",
+    "two.js",
+    "tool",
+    "equalizer",
+    "fft",
+    "sound"
+  ],
+  "author": "jonobr1",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jonobr1/equalizer/issues"
+  },
+  "homepage": "https://github.com/jonobr1/equalizer#readme",
+  "dependencies": {
+    "node-minify": "^2.0.2"
+  }
+}
