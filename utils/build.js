@@ -10,6 +10,20 @@ var files = [
   path.resolve(__dirname, '../src/timeline.js')
 ];
 
+// Clean
+compressor.minify({
+  compressor: 'no-compress',
+  input: files.slice(1),
+  output: path.resolve(__dirname, '../build/equalizer.clean.js'),
+  callback: function(e) {
+    if (!e) {
+      console.log('clean complete');
+    } else {
+      console.log('unable to clean', e);
+    }
+  }
+});
+
 // Concatenated
 compressor.minify({
   compressor: 'no-compress',
