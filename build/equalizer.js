@@ -9404,6 +9404,8 @@ this.Two = (function(previousTwo) {
 
   Equalizer.Utils.extend(Timeline, {
 
+    Precision: 3,
+
     Resolution: 128,
 
     Atomic: 0.33,
@@ -9447,6 +9449,43 @@ this.Two = (function(previousTwo) {
       var scope = this;
       var two = this.two;
       var stage = this.two.renderer.domElement;
+
+      stage.addEventListener('dblclick', function(e) {
+
+        if (scope.sound.playing) {
+          return;
+        }
+
+        e.preventDefault();
+
+        var rect = stage.getBoundingClientRect();
+        var x = e.clientX - document.body.scrollLeft;
+        var y = e.clientY - document.body.scrollTop;
+
+        x -= rect.left;
+        y -= rect.top + Timeline.Padding;
+
+        var startTime = scope.sound.currentTime;
+        var id = Math.floor(scope.tracks.length *(x / two.width));
+        var time = scope.range * (y / two.height) + startTime;
+
+        id = Math.max(Math.min(id, scope.tracks.length - 1), 0);
+        time = parseFloat(time.toFixed(Timeline.Precision));
+
+        var unit = scope.tracks[id].add(time, true);
+        setTimeout(function() {
+
+          var shape = scope.getShapeByUnit(unit);
+
+          if (!shape) {
+            return;
+          }
+
+          selectShape.call({ shape: shape });
+
+        }, 0);
+
+      }, false);
 
       stage.addEventListener('mousewheel', function(e) {
 
@@ -9644,13 +9683,28 @@ this.Two = (function(previousTwo) {
       return this;
     },
 
+    getShapeByUnit: function(unit) {
+
+      var shapes = this.layers.stage.children;
+
+      for (var i = 0; i < shapes.length; i++) {
+        var shape = shapes[i];
+        if (shape.unit && Unit.equals(shape.unit, unit)) {
+          return shape;
+        }
+      }
+
+      return null;
+
+    },
+
     update: function(silent) {
 
       if (!this.sound) {
         return this;
       }
 
-      var currentTime = parseFloat(this.sound.currentTime.toFixed(3));
+      var currentTime = parseFloat(this.sound.currentTime.toFixed(Timeline.Precision));
       var two = this.two;
       var i, id = 0; // index of shape to be drawn.
       var bands = this.equalizer.bands;
@@ -9820,15 +9874,15 @@ this.Two = (function(previousTwo) {
 
     active: true,
 
-    add: function(time) {
+    add: function(time, force) {
 
-      if (!this.active) {
+      if (!force && !this.active) {
         return this;
       }
 
       if (this.elements.length <= 0) {
         this.elements.push(new Unit(this, time, true));
-        return this;
+        return this.elements[this.elements.length - 1];
       }
 
       var length = this.elements.length;
@@ -9842,7 +9896,7 @@ this.Two = (function(previousTwo) {
 
         ref.type = Unit.Types.hold;
         ref.value = time;
-        return this;
+        return ref;
 
       }
 
@@ -9854,12 +9908,12 @@ this.Two = (function(previousTwo) {
           if (unit.time < ref.time) {
             this.elements.splice(i, 0, unit);
             this.elements.index = i;
-            return this;
+            return unit;
           }
         }
         this.elements.push(unit);
         this.elements.index = this.elements.length - 1;
-        return this;
+        return unit;
       }
 
       for (i = index; i >= 0; i--) {
@@ -9867,12 +9921,12 @@ this.Two = (function(previousTwo) {
         if (unit.time > ref.time) {
           this.elements.splice(i + 1, 0, unit);
           this.elements.index = i + 1;
-          return this;
+          return unit;
         }
       }
       this.elements.unshift(unit);
       this.elements.index = 0;
-      return this;
+      return unit;
 
     },
 
@@ -9990,6 +10044,12 @@ this.Two = (function(previousTwo) {
           lineHeight: 14 + 'px'
         }
       }
+    },
+
+    equals: function(a, b) {
+      return a.type === b.type
+        && a.time === b.time
+        && a.value === b.value;
     }
 
   });
@@ -10091,12 +10151,14 @@ this.Two = (function(previousTwo) {
         }
 
         input.appendChild(option);
+        input.style.textTransform = 'capitalize';
 
       }
 
     } else {
 
       input = document.createElement('input');
+      input.style.height = 12 + 'px';
 
     }
 
@@ -10114,10 +10176,9 @@ this.Two = (function(previousTwo) {
     });
     Equalizer.Utils.extend(input.style, Unit.Utils.defaultStyles.font, {
       display: 'inline-block',
-      height: 12 + 'px',
       width: 66 + '%',
       overflow: 'hidden',
-      textTransform: 'capitalize'
+      verticalAlign: 'top'
     });
 
     container.appendChild(label);
