@@ -549,6 +549,10 @@
 
   var Equalizer = root.Equalizer = function(width, height) {
 
+    if (Equalizer.Resolution > Sound.analysis.frequencyBinCount) {
+      throw new Error('Equalizer: unable to construct equalizer with more bands than analyzer node.');
+    }
+
     this.analyzer = Sound.analysis;
     this.domElement = document.createElement('div');
     this.domElement.classList.add('equalizer');
@@ -639,6 +643,8 @@
 
   extend(Equalizer, {
 
+    Precision: 0, // [0, 255]
+
     Resolution: 16,
 
     drag: 0.005,
@@ -712,16 +718,25 @@
       var height = two.height * 0.75;
       var step = this.analyzer.data.length / this.bands.length;
 
-      for (var i = 0, y; i < this.bands.length; i++) {
+      var sum = 0;
+      var bin = Math.floor(step);
+
+      for (var j = 0, i = 0; j < this.analyzer.data.length; j++) {
+
+        var k = (j + 1) % bin;
+        sum += clamp(this.analyzer.data[j], 0, 255);
+
+        if (k !== 0 || j === 0) {
+          continue;
+        }
 
         var pct = i / this.bands.length;
         var band = this.bands[i];
-        var index = Math.floor(step * (i + 0.5));
 
         var value = band.value;
         var peak = band.peak.value;
 
-        band.value = clamp(this.analyzer.data[index], 0, 255);
+        band.value = sum / bin;
 
         if (band.value > band.peak.value) {
           band.peak.value = band.value;
@@ -732,8 +747,8 @@
         }
 
         var direction = band.direction.value;
-        band.direction.value = (band.peak.value - peak < 0 ? - 1 :
-          (band.peak.value - peak === 0 ? 0 : 1));
+        band.direction.value = (band.peak.value - peak < - Equalizer.Precision ? - 1 :
+          (band.peak.value - peak <= Equalizer.Precision ? 0 : 1));
         var changedDirection = direction !== band.direction.value;
 
         if (changedDirection && band.direction.value > 0) {
@@ -767,6 +782,9 @@
           anchor.outlier.scale += (1 - anchor.outlier.scale) * Equalizer.drift;
           anchor.outlier.updated = false;
         }
+
+        sum = 0;
+        i++;
 
       }
 
@@ -1584,8 +1602,8 @@
       for (var i = 0; i < this.elements.length; i++) {
         var el = this.elements[i];
         resp.push({
-          t: el.time,
-          v: el.type === Unit.Types.beat ? !!el.value : el.value
+          t: parseFloat(el.time),
+          v: el.type === Unit.Types.beat ? !!el.value : parseFloat(el.value)
         });
       }
       return resp;

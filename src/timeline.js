@@ -744,8 +744,8 @@
       for (var i = 0; i < this.elements.length; i++) {
         var el = this.elements[i];
         resp.push({
-          t: el.time,
-          v: el.type === Unit.Types.beat ? !!el.value : el.value
+          t: parseFloat(el.time),
+          v: el.type === Unit.Types.beat ? !!el.value : parseFloat(el.value)
         });
       }
       return resp;
