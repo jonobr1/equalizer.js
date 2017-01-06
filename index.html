@@ -86,7 +86,7 @@
           <a href="http://github.com/jonobr1/equalizer">Source Code</a> &middot; <a href="https://github.com/jonobr1/equalizer/blob/master/license.txt" target="_blank">MIT</a>
         </p>
         <p id="instructions">
-          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray box. Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed. Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands">16</span> bands representing different amplitudes at equally spaced frequency bandwidths.
+          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray box. Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed. Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands"></span> bands representing different amplitudes at equally spaced frequency bandwidths.
         </p>
         <p>
           You can hit the <span id="record-button" class="action">gray circle</span> to record &ldquo;beats&rdquo; from the equalizer to the staff. Once recording has been enabled you can click and drag to scrub through the staff and scroll (i.e: use your computer&apos;s mousewheel) to change the scale of the staff&apos;s viewport.
@@ -122,12 +122,16 @@
       </div>
     </div>
     <div class="scripts">
+      <script src="./third-party/url.js"></script>
       <script src="./third-party/two.js"></script>
       <script src="./third-party/sound.js"></script>
       <script src="./third-party/sound-empty.js"></script>
       <script src="./src/equalizer.js"></script>
       <script src="./src/timeline.js"></script>
       <script>
+
+        Equalizer.Resolution = url.number('resolution', 16);
+        document.querySelector('#bands').textContent = Equalizer.Resolution;
 
         var equalizer = new Equalizer()
           .appendTo(document.querySelector('#tool'));
