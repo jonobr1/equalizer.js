@@ -9473,7 +9473,8 @@ this.Two = (function(previousTwo) {
         time = parseFloat(time.toFixed(Timeline.Precision));
 
         var unit = scope.tracks[id].add(time, true);
-        setTimeout(function() {
+
+        requestAnimationFrame(function() {
 
           var shape = scope.getShapeByUnit(unit);
 
@@ -9483,7 +9484,7 @@ this.Two = (function(previousTwo) {
 
           selectShape.call({ shape: shape });
 
-        }, 0);
+        });
 
       }, false);
 
@@ -10131,6 +10132,7 @@ this.Two = (function(previousTwo) {
     if (typeof value === 'function') {
 
       input = document.createElement('button');
+      input.tabIndex = -1;
       input.innerHTML = title;
       input.addEventListener('click', value, false);
       input.style.cursor = 'pointer';
