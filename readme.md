@@ -8,10 +8,10 @@ Check out the [gh-pages](https://jonobr1.github.io/equalizer) for use.
 
 Things that need to be figured out:
 
-+ Ability to load without update / append UI (for production)
-+ `Equalizer` should work without a `Equalizer.Timeline`
-+ `Equalizer.Timeline` should work without `Equalizer`
-+ Build process
++ Make decision on `Equalizer.Timeline.isOn` syntax
 + Tests
 + Readme Documentation on how to use all different ways
+  + `Equalizer`
+  + `Equalizer + Equalizer.Timeline`
+  + `Equalizer.Timeline`
 + Examples
