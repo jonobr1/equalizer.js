@@ -7,33 +7,40 @@ var has = !!(AudioContext);
 
 function load(uri, callback) {
 
-  var r = new XMLHttpRequest();
-  r.open('GET', uri, true);
-  r.responseType = 'arraybuffer';
+  return new Promise(function(resolve, reject) {
 
-  r.onload = function() {
-    decode(r.response, callback);
-  };
+    var r = new XMLHttpRequest();
+    r.open('GET', uri, true);
+    r.responseType = 'arraybuffer';
 
-  r.send();
+    r.onerror = reject;
+    r.onload = function() {
+      resolve({
+        data: r.response,
+        callback
+      });
+    };
 
-  return r;
+    r.send();
+
+  });
 
 }
 
-function decode(data, callback) {
+function decode({ data, callback }) {
 
-  var success = function(buffer) {
-    if (callback) {
-      callback(buffer);
-    }
-  };
+  return new Promise(function(resolve, reject) {
 
-  var error = function() {
-    console.error('decodeAudioData error:', error);
-  };
+    var success = function(buffer) {
+      resolve(buffer);
+      if (callback) {
+        callback(buffer);
+      }
+    };
 
-  Sound.ctx.decodeAudioData(data, success, error);
+    Sound.ctx.decodeAudioData(data, success, reject);
+
+  });
 
 }
 
@@ -68,12 +75,15 @@ export default class Sound {
 
       case 'string':
         this.src = url;
-        load(url, assignBuffer);
+        load(url, assignBuffer).then(decode);
         break;
 
       case 'array':
       case 'object':
-        decode(url, assignBuffer);
+        decode({
+          data: url,
+          callback: assignBuffer
+        });
         break;
 
     }
