@@ -1,62 +1,29 @@
-/**
- * @jonobr1 / http://jonobr1.com/
- */
+import Sound from './sound.js';
+import { extend, clamp } from './underscore.js';
+import { styles, colors } from './styles.js';
 
-(function() {
+export default class Equalizer {
 
-  var root = this;
-  var previousEqualizer = root.Equalizer || {};
-  var Colors = {
-    'eee': '#eee',
-    'ccc': '#ccc',
-    'bbb': '#bbb',
-    '888': '#888',
-    'black': 'black',
-    'green': 'rgb(100, 255, 100)',
-    'blue': 'rgb(50, 150, 255)',
-    'purple': 'rgb(150, 50, 255)',
-    'pink': 'rgb(255, 100, 100)',
-    'red': 'rgb(255, 50, 50)',
-    'orange': 'orange',
-    'gold': 'rgb(255, 150, 50)',
-    'white': 'white'
-  };
-  var styles = {
-    font: {
-      family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-      size: 11,
-      fill: Colors['888'],
-      leading: 20,
-      weight: 500
-    },
-    classic: {
-      display: 'block',
-      position: 'relative',
-      background: 'transparent',
-      padding: 20 + 'px'
-    },
-    recording: {
-      position: 'absolute',
-      borderRadius: '50%',
-      top: 10 + 'px',
-      left: '50%',
-      width: 8 + 'px',
-      height: 8 + 'px',
-      marginLeft: - 4 + 'px',
-      marginTop: - 4 + 'px',
-      cursor: 'pointer',
-      background: Colors['ccc'],
-      content: ''
-    }
-  };
+  static Precision = 0; // [0, 255]
+  static Resolution = 16;
+  static Drag = 0.005;
+  static Drift = 0.33;
+  static Amplitude = 255;
+  static Threshold = 0.25;
 
-  var Equalizer = root.Equalizer = function(width, height) {
+  // this.analyser;
+  // this.domElement;
+  // this.two;
+  // this.bands;
+  // this.average;
 
-    if (Equalizer.Resolution > Sound.analysis.frequencyBinCount) {
-      throw new Error('Equalizer: unable to construct equalizer with more bands than analyzer node.');
-    }
+  constructor(width, height) {
 
-    this.analyzer = Sound.analysis;
+    this.analyser = Sound.ctx.createAnalyser();
+    this.analyser.connect(Sound.ctx.destination);
+    this.analyser.fftSize = this.analyser.frequencyBinCount;
+    this.analyser.data = new Uint8Array(this.analyser.frequencyBinCount);
+
     this.domElement = document.createElement('div');
     this.domElement.classList.add('equalizer');
 
@@ -79,7 +46,7 @@
       band.value = 0;
       band.linewidth = (two.width / Equalizer.Resolution) * 0.85;
 
-      band.stroke = Colors['bbb'];
+      band.stroke = colors['bbb'];
       band.noFill();
       band.opacity = 0.5;
 
@@ -88,19 +55,19 @@
 
       band.peak.value = 0;
       band.peak.updated = false;
-      band.peak.stroke = Colors['888'];
+      band.peak.stroke = colors['888'];
       band.peak.noFill();
       band.peak.linewidth = 2;
 
       band.beat = new Two.Ellipse(x, two.height * 0.125, 2, 2);
       band.beat.noStroke();
-      band.beat.fill = Colors.blue;
+      band.beat.fill = colors.blue;
 
       band.direction = new Two.Line(x - band.linewidth / 2, 0,
         x + band.linewidth / 2, 0);
 
       band.direction.value = 0;
-      band.direction.stroke = Colors.red;
+      band.direction.stroke = colors.red;
       band.direction.noFill();
       band.direction.linewidth = 2;
 
@@ -110,7 +77,7 @@
 
       anchor.outlier = new Two.Ellipse(0, 0, 1, 1);
       anchor.outlier.noStroke();
-      anchor.outlier.fill = Colors.purple;
+      anchor.outlier.fill = colors.purple;
 
       two.add(band, band.peak, band.beat, band.direction);
       this.bands.push(band);
@@ -118,7 +85,7 @@
     }
 
     this.average = new Two.Path(vertices, false, true);
-    this.average.stroke = Colors.gold;
+    this.average.stroke = colors.gold;
     this.average.opacity = 0.85;
     this.average.cap = 'round';
     this.average.linewidth = 1;
@@ -127,234 +94,141 @@
 
     two.add(this.average);
 
-    var enslave = function(anchor, i) {
-      anchor.outlier.translation.unbind();
-      anchor.outlier.translation = anchor;
-      anchor.bind(Two.Events.change, function() {
-        Two.Shape.FlagMatrix.call(anchor.outlier);
-      });
-    };
-
     for (var i = 0; i < vertices.length; i++) {
       var anchor = vertices[i];
       enslave(anchor, i);
       two.add(anchor.outlier);
     }
 
-
-  };
-
-  extend(Equalizer, {
-
-    Precision: 0, // [0, 255]
-
-    Resolution: 16,
-
-    drag: 0.005,
-
-    drift: 0.33,
-
-    amplitude: 255,
-
-    threshold: 0.25,
-
-    Utils: {
-
-      clamp: clamp,
-      extend: extend,
-
-      formatSeconds: formatSeconds,
-      defaultStyles: styles
-
-   },
-
-   Colors: Colors
-
-  });
-
-  extend(Equalizer.prototype, {
-
-    appendTo: function(elem) {
-      elem.appendChild(this.domElement);
-      return this;
-    },
-
-    createTimeline: function(timeline) {
-
-      var container = document.createElement('div');
-      container.style.position = 'relative';
-      elem.appendChild(container);
-
-      if (!timeline) {
-        this.timeline = new Equalizer.Timeline(
-          this, this.two.width, this.two.width * 1.5);
-      }
-      this.timeline.appendTo(container);
-
-      this.two.renderer.domElement.style.paddingBottom = 10 + 'px';
-
-      return this;
-
-    },
-
-    analyze: function(sound, json) {
-
-      this.sound = sound instanceof Sound
-        ? sound : new Sound.Empty(json);
-
-      if (!this.timeline) {
-        this.createTimeline();
-      }
-
-      this.timeline.analyze(this.sound, json);
-
-      return this;
-
-    },
-
-    update: function(silent) {
-
-      var two = this.two;
-
-      this.analyzer.getByteFrequencyData(this.analyzer.data);
-
-      var height = two.height * 0.75;
-      var step = this.analyzer.data.length / this.bands.length;
-
-      var sum = 0;
-      var bin = Math.floor(step);
-
-      for (var j = 0, i = 0; j < this.analyzer.data.length; j++) {
-
-        var k = (j + 1) % bin;
-        sum += clamp(this.analyzer.data[j], 0, 255);
-
-        if (k !== 0 || j === 0) {
-          continue;
-        }
-
-        var pct = i / this.bands.length;
-        var band = this.bands[i];
-
-        var value = band.value;
-        var peak = band.peak.value;
-
-        band.value = sum / bin;
-
-        if (band.value > band.peak.value) {
-          band.peak.value = band.value;
-          band.peak.updated = true;
-        } else {
-          band.peak.value -= band.peak.value * Equalizer.drag;
-          band.peak.updated = false;
-        }
-
-        var direction = band.direction.value;
-        band.direction.value = (band.peak.value - peak < - Equalizer.Precision ? - 1 :
-          (band.peak.value - peak <= Equalizer.Precision ? 0 : 1));
-        var changedDirection = direction !== band.direction.value;
-
-        if (changedDirection && band.direction.value > 0) {
-          band.beat.scale = 3;
-          band.beat.updated = true;
-        } else {
-          band.beat.scale += (1 - band.beat.scale) * Equalizer.drift;
-          band.beat.updated = false;
-        }
-
-        band.direction.stroke = band.direction.value <= 0 ? Colors.pink
-          : Colors.green;
-
-        y = two.height - height * (band.value / Equalizer.amplitude);
-        band.vertices[0].y = two.height;
-        band.vertices[1].y = Math.min(y, two.height - 2);
-
-        y = two.height - height * (band.peak.value / Equalizer.amplitude);
-        band.peak.vertices[0].y = band.peak.vertices[1].y = y;
-
-        var anchor = this.average.vertices[i];
-        anchor.sum += band.value;
-        anchor.value = anchor.sum / this.average.index;
-        anchor.y = two.height - height * anchor.value / Equalizer.amplitude;
-
-        if (Math.abs(band.value - anchor.value)
-          > Equalizer.amplitude * Equalizer.threshold) {
-          anchor.outlier.scale = 2;
-          anchor.outlier.updated = true;
-        } else {
-          anchor.outlier.scale += (1 - anchor.outlier.scale) * Equalizer.drift;
-          anchor.outlier.updated = false;
-        }
-
-        sum = 0;
-        i++;
-
-      }
-
-      this.average.index++;
-
-      if (this.timeline) {
-        this.timeline.update(silent);
-      }
-
-      if (!silent) {
-        two.update();
-      }
-
-      return this;
-
-    },
-
-    reset: function() {
-
-      for (var i = 0; i < this.average.vertices.length; i++) {
-        var anchor = this.average.vertices[i];
-        anchor.sum = 0;
-        anchor.value = 0;
-        anchor.y = this.two.height;
-      }
-
-      this.average.index = 1;
-
-      return this;
-
+    function enslave(anchor, i) {
+      anchor.outlier.translation.unbind();
+      anchor.outlier.translation = anchor;
+      anchor.bind(Two.Events.change, function() {
+        Two.Shape.FlagMatrix.call(anchor.outlier);
+      });
     }
-
-  });
-
-  function clamp(v, a, b) {
-    return Math.min(Math.max(v, a), b);
-  }
-
-  function extend(base) {
-
-    if (arguments.length < 2) {
-      return base;
-    }
-
-    for (var i = 1; i < arguments.length; i++) {
-      var obj = arguments[i];
-      for (var k in obj) {
-        base[k] = obj[k];
-      }
-    }
-
-    return base;
 
   }
 
-  function formatSeconds(time) {
+  appendTo(elem) {
+    elem.appendChild(this.domElement);
+    return this;
+  }
 
-    var min = Math.floor(time / 60);
-    var sec = Math.floor(time % 60);
-    var mil = Math.floor((time - Math.floor(time)) * 100);
+  add(sound, json) {
 
-    return [
-      min < 10 ? '0' + min : min,
-      sec < 10 ? '0' + sec : sec,
-      mil < 10 ? '0' + mil : mil
-    ].join(':');
+    this.sound = sound instanceof Sound ? sound : new Sound.Empty(json);
+    this.sound.applyFilter(this.analyser);
+
+    return this;
 
   }
 
-})();
+  update(silent) {
+
+    var two = this.two;
+
+    this.analyser.getByteFrequencyData(this.analyser.data);
+
+    var height = two.height * 0.75;
+    var step = this.analyser.data.length / this.bands.length;
+
+    var sum = 0;
+    var bin = Math.floor(step);
+
+    for (var j = 0, i = 0; j < this.analyser.data.length; j++) {
+
+      var k = (j + 1) % bin;
+      sum += clamp(this.analyser.data[j], 0, 255);
+
+      if (k !== 0 || j === 0) {
+        continue;
+      }
+
+      var pct = i / this.bands.length;
+      var band = this.bands[i];
+
+      var value = band.value;
+      var peak = band.peak.value;
+
+      var direction, changedDirection, y, anchor;
+
+      band.value = sum / bin;
+
+      if (band.value > band.peak.value) {
+        band.peak.value = band.value;
+        band.peak.updated = true;
+      } else {
+        band.peak.value -= band.peak.value * Equalizer.Drag;
+        band.peak.updated = false;
+      }
+
+      direction = band.direction.value;
+      band.direction.value = (band.peak.value - peak < - Equalizer.Precision ? - 1 :
+        (band.peak.value - peak <= Equalizer.Precision ? 0 : 1));
+      changedDirection = direction !== band.direction.value;
+
+      if (changedDirection && band.direction.value > 0) {
+        band.beat.scale = 3;
+        band.beat.updated = true;
+      } else {
+        band.beat.scale += (1 - band.beat.scale) * Equalizer.Drift;
+        band.beat.updated = false;
+      }
+
+      band.direction.stroke = band.direction.value <= 0 ? colors.pink
+        : colors.green;
+
+      y = two.height - height * (band.value / Equalizer.Amplitude);
+      band.vertices[0].y = two.height;
+      band.vertices[1].y = Math.min(y, two.height - 2);
+
+      y = two.height - height * (band.peak.value / Equalizer.Amplitude);
+      band.peak.vertices[0].y = band.peak.vertices[1].y = y;
+
+      anchor = this.average.vertices[i];
+      anchor.sum += band.value;
+      anchor.value = anchor.sum / this.average.index;
+      anchor.y = two.height - height * anchor.value / Equalizer.Amplitude;
+
+      if (Math.abs(band.value - anchor.value)
+        > Equalizer.Amplitude * Equalizer.Threshold) {
+        anchor.outlier.scale = 2;
+        anchor.outlier.updated = true;
+      } else {
+        anchor.outlier.scale += (1 - anchor.outlier.scale) * Equalizer.Drift;
+        anchor.outlier.updated = false;
+      }
+
+      sum = 0;
+      i++;
+
+    }
+
+    this.average.index++;
+    this.analyser.getByteTimeDomainData(this.analyser.data);
+
+    if (!silent) {
+      two.update();
+    }
+
+    return this;
+
+  }
+
+  reset() {
+
+    for (var i = 0; i < this.average.vertices.length; i++) {
+      var anchor = this.average.vertices[i];
+      anchor.sum = 0;
+      anchor.value = 0;
+      anchor.y = this.two.height;
+    }
+
+    this.average.index = 1;
+
+    return this;
+
+  }
+
+}
