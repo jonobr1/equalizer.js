@@ -1,5 +1,5 @@
 import Sound from './sound.js';
-import { extend, clamp } from './underscore.js';
+import { clamp, extend, mod } from './underscore.js';
 import { styles, colors } from './styles.js';
 
 export default class Equalizer {
@@ -11,17 +11,20 @@ export default class Equalizer {
   static Amplitude = 255;
   static Threshold = 0.25;
 
-  // this.analyser;
-  // this.domElement;
-  // this.two;
-  // this.bands;
-  // this.average;
+  this.analyser = null;
+  this.domElement = null;
+  this.nodes = null;
+  this.two = null;
+  this.bands = null;
+  this.average = null;
 
-  constructor(width, height) {
+  constructor(width, height, fftSize) {
+
+    this.nodes = [];
 
     this.analyser = Sound.ctx.createAnalyser();
     this.analyser.connect(Sound.ctx.destination);
-    this.analyser.fftSize = this.analyser.frequencyBinCount;
+    this.analyser.fftSize = fftSize || this.analyser.frequencyBinCount;
     this.analyser.data = new Uint8Array(this.analyser.frequencyBinCount);
 
     this.domElement = document.createElement('div');
@@ -115,20 +118,72 @@ export default class Equalizer {
     return this;
   }
 
-  add(sound, json) {
+  load(path, callback) {
 
-    this.sound = sound instanceof Sound ? sound : new Sound.Empty(json);
-    this.sound.applyFilter(this.analyser);
+    return new Promise(function(resolve, reject) {
+
+      var scope = this;
+
+      var r = new XMLHttpRequest();
+      r.open('GET', path, true);
+
+      r.onerror = reject;
+      r.onload = function() {
+
+        var data = JSON.parse(r.response);
+        scope.analyzed = data;
+
+        if (callback) {
+          callback();
+        }
+
+        resolve(scope.analyzed);
+
+      };
+
+      r.send();
+
+    });
+
+  }
+
+  add(node) {
+
+    if (this.nodes.indexOf(node) < 0) {
+      this.nodes.push(node);
+      node.connect(this.analyser);
+    }
 
     return this;
 
   }
 
-  update(silent) {
+  remove(node) {
+
+    var index = this.nodes.indexOf(node);
+    if (index >= 0) {
+      return this.nodes.splice(index, 1);
+    }
+
+    return null;
+
+  }
+
+  update(currentTime, silent) {
 
     var two = this.two;
 
-    this.analyser.getByteFrequencyData(this.analyser.data);
+    if (this.analyzed) {
+      var sid = Math.floor(currentTime * this.analyzed.frameRate);
+      var sample = this.analyzed.samples[sid];
+      if (sample) {
+        this.analyser.data = Uint8Array.from(sample);
+      } else {
+        this.analyzer.data = new Uint8Array(this.analyzed.resolution);
+      }
+    } else {
+      this.analyser.getByteFrequencyData(this.analyser.data);
+    }
 
     var height = two.height * 0.75;
     var step = this.analyser.data.length / this.bands.length;
@@ -138,10 +193,10 @@ export default class Equalizer {
 
     for (var j = 0, i = 0; j < this.analyser.data.length; j++) {
 
-      var k = (j + 1) % bin;
+      var k = mod(Math.floor(j - bin / 2), bin);
       sum += clamp(this.analyser.data[j], 0, 255);
 
-      if (k !== 0 || j === 0) {
+      if (k !== 0) {
         continue;
       }
 
@@ -205,8 +260,14 @@ export default class Equalizer {
 
     }
 
+    if (this.analyzed) {
+      // TODO: Extrapolate the data to this.analyser.data
+      // from this.analyzed
+    } else {
+      this.analyser.getByteTimeDomainData(this.analyser.data);
+    }
+
     this.average.index++;
-    this.analyser.getByteTimeDomainData(this.analyser.data);
 
     if (!silent) {
       two.update();
