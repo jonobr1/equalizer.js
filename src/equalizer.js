@@ -11,12 +11,12 @@ export default class Equalizer {
   static Amplitude = 255;
   static Threshold = 0.25;
 
-  this.analyser = null;
-  this.domElement = null;
-  this.nodes = null;
-  this.two = null;
-  this.bands = null;
-  this.average = null;
+  analyser;
+  domElement;
+  nodes;
+  two;
+  bands;
+  average;
 
   constructor(width, height, fftSize) {
 
