@@ -679,4 +679,5 @@
   __publicField(Equalizer, "Drift", 0.33);
   __publicField(Equalizer, "Amplitude", 255);
   __publicField(Equalizer, "Threshold", 0.25);
+  __publicField(Equalizer, "Sound", Sound);
 })();
