@@ -69,8 +69,15 @@
   var identity = function(v) {
     return v;
   };
-  var AudioContext = window.AudioContext || window.webkitAudioContext;
-  var has = !!AudioContext;
+  var Context;
+  var has;
+  try {
+    Context = AudioContext || webkitAudioContext;
+    has = !!Context;
+  } catch (e) {
+    Context = null;
+    has = false;
+  }
   function load(uri, callback) {
     return new Promise(function(resolve, reject) {
       var r = new XMLHttpRequest();
@@ -114,7 +121,7 @@
       if (context) {
         _Sound.ctx = context;
       } else {
-        _Sound.ctx = new AudioContext();
+        _Sound.ctx = new Context();
       }
       switch (typeof url) {
         case "string":
@@ -490,10 +497,11 @@
     renderer;
     bands;
     average;
-    constructor(width, height, fftSize) {
+    constructor(context, width, height, fftSize) {
+      this.ctx = context || Sound.ctx;
       this.nodes = [];
-      this.analyser = Sound.ctx.createAnalyser();
-      this.analyser.connect(Sound.ctx.destination);
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.connect(this.ctx.destination);
       this.analyser.fftSize = fftSize || this.analyser.frequencyBinCount;
       this.analyser.data = new Uint8Array(this.analyser.frequencyBinCount);
       this.domElement = document.createElement("div");
