@@ -5,6 +5,13 @@ var entryPoints = [path.resolve(__dirname, '../src/equalizer.js')];
 es.build({
   entryPoints,
   bundle: true,
+  platform: 'node',
+  outfile: path.resolve(__dirname, '../build/equalizer.umd.js')
+});
+
+es.build({
+  entryPoints,
+  bundle: true,
   outfile: path.resolve(__dirname, '../build/equalizer.js'),
 }).catch(() => process.exit(1));
 
