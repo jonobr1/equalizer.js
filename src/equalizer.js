@@ -19,12 +19,13 @@ export default class Equalizer {
   bands;
   average;
 
-  constructor(width, height, fftSize) {
+  constructor(context, width, height, fftSize) {
 
+    this.ctx = context || Sound.ctx;
     this.nodes = [];
 
-    this.analyser = Sound.ctx.createAnalyser();
-    this.analyser.connect(Sound.ctx.destination);
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.connect(this.ctx.destination);
     this.analyser.fftSize = fftSize || this.analyser.frequencyBinCount;
     this.analyser.data = new Uint8Array(this.analyser.frequencyBinCount);
 

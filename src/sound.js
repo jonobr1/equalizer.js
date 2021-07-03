@@ -2,8 +2,15 @@ import { defaults, extend } from './underscore.js';
 
 var identity = function(v) { return v; };
 
-var AudioContext = window.AudioContext || window.webkitAudioContext;
-var has = !!(AudioContext);
+var Context, has;
+
+try {
+  Context = AudioContext || webkitAudioContext;
+  has = !!(Context);
+} catch (e) {
+  Context = null;
+  has = false;
+}
 
 function load(uri, callback) {
 
@@ -68,7 +75,7 @@ export default class Sound {
     if (context) {
       Sound.ctx = context;
     } else {
-      Sound.ctx = new AudioContext();
+      Sound.ctx = new Context();
     }
 
     switch (typeof url) {
