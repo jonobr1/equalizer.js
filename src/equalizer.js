@@ -11,6 +11,7 @@ export default class Equalizer {
   static Drift = 0.33;
   static Amplitude = 255;
   static Threshold = 0.25;
+  static Sound = Sound;
 
   analyser;
   domElement;
