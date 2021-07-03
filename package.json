@@ -29,5 +29,9 @@
   "homepage": "https://github.com/jonobr1/equalizer#readme",
   "devDependencies": {
     "esbuild": "^0.12.14"
+  },
+  "dependencies": {
+    "web-audio-engine": "^0.13.4",
+    "yargs": "^17.0.1"
   }
 }
