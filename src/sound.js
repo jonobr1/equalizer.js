@@ -78,7 +78,6 @@ export default class Sound {
         load(url, assignBuffer).then(decode);
         break;
 
-      case 'array':
       case 'object':
         decode({
           data: url,

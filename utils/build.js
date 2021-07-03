@@ -1,53 +1,16 @@
-
 var path = require('path');
-var compressor = require('node-minify');
+var es = require('esbuild')
+var entryPoints = [path.resolve(__dirname, '../src/equalizer.js')];
 
-var files = [
-  path.resolve(__dirname, '../third-party/two.js'),
-  path.resolve(__dirname, '../third-party/sound.js'),
-  path.resolve(__dirname, '../third-party/sound-empty.js'),
-  path.resolve(__dirname, '../src/equalizer.js'),
-  path.resolve(__dirname, '../src/timeline.js')
-];
+es.build({
+  entryPoints,
+  bundle: true,
+  outfile: path.resolve(__dirname, '../build/equalizer.js'),
+}).catch(() => process.exit(1));
 
-// Clean
-compressor.minify({
-  compressor: 'no-compress',
-  input: files.slice(1),
-  output: path.resolve(__dirname, '../build/equalizer.clean.js'),
-  callback: function(e) {
-    if (!e) {
-      console.log('clean complete');
-    } else {
-      console.log('unable to clean', e);
-    }
-  }
-});
-
-// Concatenated
-compressor.minify({
-  compressor: 'no-compress',
-  input: files,
-  output: path.resolve(__dirname, '../build/equalizer.js'),
-  callback: function(e) {
-    if (!e) {
-      console.log('concatenation complete');
-    } else {
-      console.log('unable to concatenate', e);
-    }
-  }
-});
-
-// Minified
-compressor.minify({
-  compressor: 'gcc',
-  input: files,
-  output: path.resolve(__dirname, '../build/equalizer.min.js'),
-  callback: function(e){
-    if (!e) {
-      console.log('minified complete');
-    } else {
-      console.log('unable to minify', e);
-    }
-  }
-});
+es.build({
+  entryPoints,
+  bundle: true,
+  minify: true,
+  outfile: path.resolve(__dirname, '../build/equalizer.min.js'),
+}).catch(() => process.exit(1));

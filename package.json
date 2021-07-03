@@ -4,6 +4,7 @@
   "description": "An audio analysis tool for real-time and choreographed visualizations.",
   "main": "build/equalizer.js",
   "scripts": {
+    "build": "node ./utils/build.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,7 @@
     "url": "https://github.com/jonobr1/equalizer/issues"
   },
   "homepage": "https://github.com/jonobr1/equalizer#readme",
-  "dependencies": {
+  "devDependencies": {
+    "esbuild": "^0.12.14"
   }
 }
