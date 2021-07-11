@@ -3,76 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Equalizer</title>
-    <style>
-      * { margin: 0; padding: 0; }
-      body {
-        font-family: "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
-        font-size: 14px;
-        line-height: 1.5;
-        color: #333;
-      }
-      .symbols {
-        font-family: webdings;
-      }
-      svg, canvas {
-        display: block;
-      }
-      div.scripts {
-        display: none;
-      }
-      div.column {
-        display: inline-block;
-        position: relative;
-        vertical-align: top;
-        min-width: 300px;
-      }
-      div#description,
-      div#post-scriptum {
-        font-family: "Lucida Bright", "Times New Roman", Times, serif;
-        font-size: 20px;
-        padding: 20px;
-      }
-      a {
-        color: #333;
-        text-decoration: none;
-        border-bottom: 1px solid #111;
-      }
-      h1, h2, h3, h4, h5, h6 {
-        font-weight: 100;
-      }
-      p {
-        max-width: 600px;
-      }
-      p + p {
-        margin-top: 10px;
-      }
-      ul {
-        margin-top: 20px;
-        margin-bottom: 20px;
-      }
-      .explanation {
-        cursor: help;
-      }
-      .action {
-        font-style: italic;
-        cursor: pointer;
-        border-bottom: 1px solid #333;
-      }
-      .nota-bene {
-        font-style: italic;
-        border-left: 4px solid orange;
-        padding-left: 10px;
-        margin-left: -10px;
-      }
-      textarea {
-        width: 300px;
-        height: 100px;
-        font-family: "Lucida Bright", "Times New Roman", Times, serif;
-        font-size: 20px;
-        padding: 10px;
-        margin: 10px 0 0 0;
-      }
-    </style>
+    <link type="text/css" rel="stylesheet" href="./styles/main.css" />
   </head>
   <body>
     <div id="content">
@@ -102,7 +33,7 @@
           <br />
           <textarea width="300" height="200"></textarea>
         </p>
-<!--         <br />
+        <br />
         <h2 id="examples">
           Examples
         </h2>
@@ -112,28 +43,31 @@
         <ul>
           <li>Real-time Analysis</li>
           <li>Choreographed Data</li>
-        </ul> -->
+        </ul>
         <p id="post-scriptum">
-            Created <span id="created-date"></span> and updated <span id="updated-date"></span>.
-            <br />
-            By <a href="http://jonobr1.com/" target="_blank">jonobr1</a> with <a href="https://two.js.org/" target="_blank">Two.js</a>
+          Created <span id="created-date"></span> and updated <span id="updated-date"></span>.
+          <br />
+          By <a href="http://jono.fyi/" target="_blank">Jono</a>
           <br />
         </p>
       </div>
     </div>
     <div class="scripts">
       <script src="./third-party/url.js"></script>
-      <script src="./third-party/two.js"></script>
-      <script src="./third-party/sound.js"></script>
-      <script src="./third-party/sound-empty.js"></script>
-      <script src="./src/equalizer.js"></script>
-      <script src="./src/timeline.js"></script>
-      <script>
+      <script type="module">
+
+        import Equalizer from './src/equalizer.js';
+        import Sound from './src/sound.js';
+
+        if (!Sound.has) {
+          throw new Error('Sound: Unable to identify the Web Audio API');
+        }
 
         Equalizer.Resolution = url.number('resolution', 16);
         document.querySelector('#bands').textContent = Equalizer.Resolution;
 
-        var equalizer = new Equalizer()
+        var context = new (AudioContext || webkitAudioContext)();
+        var equalizer = new Equalizer(context)
           .appendTo(document.querySelector('#tool'));
         var elem = equalizer.domElement;
         var sound;
@@ -196,13 +130,8 @@
           elem.style.background = 'transparent';
         });
 
-        document.querySelector('#spacebar').addEventListener('click', function() {
-          if (equalizer.sound.playing) {
-            equalizer.sound.pause();
-          } else {
-            equalizer.sound.play();
-          }
-        }, false);
+        elem.addEventListener('click', toggle, false);
+        document.querySelector('#spacebar').addEventListener('click', toggle, false);
         document.querySelector('#record-button').addEventListener('click', function() {
           if (!equalizer.timeline) {
             return;
@@ -218,7 +147,6 @@
         }, false);
         document.querySelector('#import').addEventListener('click', function() {
           var textarea = document.querySelector('textarea');
-          equalizer.analyze(sound, JSON.parse(textarea.value));
           if (!loop.init) {
             loop();
             loop.init = true;
@@ -228,7 +156,7 @@
         equalizer.update();
 
         function setup() {
-          equalizer.analyze(sound);
+          equalizer.sound = sound;
           if (!loop.init) {
             loop();
             loop.init = true;
@@ -238,6 +166,14 @@
         function loop() {
           requestAnimationFrame(loop);
           equalizer.update();
+        }
+
+        function toggle() {
+          if (equalizer.sound.playing) {
+            equalizer.sound.pause();
+          } else {
+            equalizer.sound.play();
+          }
         }
 
         function formatDate(time) {

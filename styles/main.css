@@ -1,0 +1,68 @@
+* { margin: 0; padding: 0; }
+body {
+  font-family: "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+.symbols {
+  font-family: webdings;
+}
+svg, canvas {
+  display: block;
+}
+div.scripts {
+  display: none;
+}
+div.column {
+  display: inline-block;
+  position: relative;
+  vertical-align: top;
+  min-width: 300px;
+}
+div#description,
+div#post-scriptum {
+  font-family: "Lucida Bright", "Times New Roman", Times, serif;
+  font-size: 20px;
+  padding: 20px;
+}
+a {
+  color: #333;
+  text-decoration: none;
+  border-bottom: 1px solid #111;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 100;
+}
+p {
+  max-width: 600px;
+}
+p + p {
+  margin-top: 10px;
+}
+ul {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.explanation {
+  cursor: help;
+}
+.action {
+  font-style: italic;
+  cursor: pointer;
+  border-bottom: 1px solid #333;
+}
+.nota-bene {
+  font-style: italic;
+  border-left: 4px solid orange;
+  padding-left: 10px;
+  margin-left: -10px;
+}
+textarea {
+  width: 300px;
+  height: 100px;
+  font-family: "Lucida Bright", "Times New Roman", Times, serif;
+  font-size: 20px;
+  padding: 10px;
+  margin: 10px 0 0 0;
+}
