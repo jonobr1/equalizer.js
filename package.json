@@ -30,8 +30,5 @@
   "devDependencies": {
     "esbuild": "^0.12.14"
   },
-  "dependencies": {
-    "web-audio-engine": "^0.13.4",
-    "yargs": "^17.0.1"
-  }
+  "dependencies": {}
 }
