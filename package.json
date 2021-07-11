@@ -3,9 +3,17 @@
   "version": "2.0.0",
   "description": "An audio analysis tool for real-time and choreographed visualizations.",
   "main": "build/equalizer.js",
+  "module": "build/equalizer.umd.js",
   "scripts": {
     "build": "node ./utils/build.js"
   },
+  "files": [
+    "package.json",
+    "src",
+    "build",
+    "readme.md",
+    "index.html"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jonobr1/equalizer.git"

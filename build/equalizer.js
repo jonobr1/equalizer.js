@@ -672,7 +672,7 @@
       return this;
     }
   };
-  var Equalizer = _Equalizer;
+  var Equalizer = _Equalizer;  window.Equalizer = Equalizer;
   __publicField(Equalizer, "Precision", 0);
   __publicField(Equalizer, "Resolution", 16);
   __publicField(Equalizer, "Drag", 5e-3);
