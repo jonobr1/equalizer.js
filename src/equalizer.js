@@ -13,6 +13,7 @@ export default class Equalizer {
   static Threshold = 0.25;
   static Sound = Sound;
 
+  analysed;
   analyser;
   domElement;
   nodes;
@@ -117,13 +118,13 @@ export default class Equalizer {
       r.onload = function() {
 
         var data = JSON.parse(r.response);
-        scope.analyzed = data;
+        scope.analysed = data;
 
         if (callback) {
           callback();
         }
 
-        resolve(scope.analyzed);
+        resolve(scope.analysed);
 
       };
 
@@ -157,13 +158,13 @@ export default class Equalizer {
 
   update(currentTime, silent) {
 
-    if (this.analyzed) {
-      var sid = Math.floor(currentTime * this.analyzed.frameRate);
-      var sample = this.analyzed.samples[sid];
+    if (this.analysed) {
+      var sid = Math.floor(currentTime * this.analysed.frameRate);
+      var sample = this.analysed.samples[sid];
       if (sample) {
         this.analyser.data = Uint8Array.from(sample);
       } else {
-        this.analyzer.data = new Uint8Array(this.analyzed.resolution);
+        this.analyser.data = new Uint8Array(this.analysed.resolution);
       }
     } else {
       this.analyser.getByteFrequencyData(this.analyser.data);
@@ -253,9 +254,9 @@ export default class Equalizer {
 
     this.average.render(this.renderer.ctx);
 
-    if (this.analyzed) {
+    if (this.analysed) {
       // TODO: Extrapolate the data to this.analyser.data
-      // from this.analyzed
+      // from this.analysed
     } else {
       this.analyser.getByteTimeDomainData(this.analyser.data);
     }
@@ -279,6 +280,24 @@ export default class Equalizer {
 
     return this;
 
+  }
+
+  //
+
+  get analyzer() {
+    return this.analyser;
+  }
+
+  set analyzer(v) {
+    this.analyser = v;
+  }
+
+  get analyzed() {
+    return this.analysed;
+  }
+
+  set analyzed(v) {
+    this.analysed = v;
   }
 
 }
