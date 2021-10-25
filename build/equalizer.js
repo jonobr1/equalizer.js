@@ -78,7 +78,7 @@
     Context = null;
     has = false;
   }
-  function load(uri, callback) {
+  function load({ context, uri, callback }) {
     return new Promise(function(resolve, reject) {
       var r = new XMLHttpRequest();
       r.open("GET", uri, true);
@@ -86,6 +86,7 @@
       r.onerror = reject;
       r.onload = function() {
         resolve({
+          context,
           data: r.response,
           callback
         });
@@ -93,7 +94,7 @@
       r.send();
     });
   }
-  function decode({ data, callback }) {
+  function decode({ context, data, callback }) {
     return new Promise(function(resolve, reject) {
       var success = function(buffer) {
         resolve(buffer);
@@ -101,12 +102,12 @@
           callback(buffer);
         }
       };
-      Sound.ctx.decodeAudioData(data, success, reject);
+      context.decodeAudioData(data, success, reject);
     });
   }
   var _loop, _volume, _speed, _startTime, _offset, _ended, __create;
-  var _Sound = class {
-    constructor(url, callback, context) {
+  var Sound = class {
+    constructor(context, uri, callback) {
       __privateAdd(this, _ended);
       __privateAdd(this, _loop, false);
       __privateAdd(this, _volume, 1);
@@ -117,28 +118,34 @@
       __publicField(this, "filter", null);
       __publicField(this, "gain", null);
       __publicField(this, "src", null);
+      __publicField(this, "ctx", null);
       var scope = this;
-      if (context) {
-        _Sound.ctx = context;
-      } else {
-        _Sound.ctx = new Context();
+      switch (arguments.length) {
+        case 1:
+        case 2:
+          callback = uri;
+          uri = context;
+          context = new Context();
+          break;
       }
-      switch (typeof url) {
+      this.ctx = context;
+      switch (typeof uri) {
         case "string":
-          this.src = url;
-          load(url, assignBuffer).then(decode);
+          this.src = uri;
+          load({ context, uri, callback: assignBuffer }).then(decode);
           break;
         case "object":
           decode({
-            data: url,
+            context,
+            data: uri,
             callback: assignBuffer
           });
           break;
       }
       function assignBuffer(buffer) {
         scope.buffer = buffer;
-        scope.gain = scope.filter = _Sound.ctx.createGain();
-        scope.gain.connect(_Sound.ctx.destination);
+        scope.gain = scope.filter = context.createGain();
+        scope.gain.connect(context.destination);
         scope.gain.gain.value = Math.max(Math.min(__privateGet(scope, _volume), 1), 0);
         if (callback) {
           callback(this);
@@ -155,13 +162,13 @@
     }
     play(options) {
       var params = defaults(options || {}, {
-        time: _Sound.ctx.currentTime,
+        time: this.ctx.currentTime,
         loop: this._loop,
         offset: this._offset,
         duration: this.buffer.duration - this._offset
       });
-      if (_Sound.ctx && /suspended/i.test(_Sound.ctx.state)) {
-        _Sound.ctx.resume();
+      if (this.ctx && /suspended/i.test(this.ctx.state)) {
+        this.ctx.resume();
       }
       if (this.source) {
         this.stop();
@@ -169,7 +176,7 @@
       __privateSet(this, _startTime, params.time);
       __privateSet(this, _loop, params.loop);
       this.playing = true;
-      this.source = _Sound.ctx.createBufferSource();
+      this.source = this.ctx.createBufferSource();
       this.source.onended = __privateMethod(this, _ended, __create);
       this.source.buffer = this.buffer;
       this.source.loop = params.loop;
@@ -187,7 +194,7 @@
         return this;
       }
       var params = defaults(options || {}, {
-        time: _Sound.ctx.currentTime
+        time: this.ctx.currentTime
       });
       this.source.onended = identity;
       if (this.source.stop) {
@@ -196,7 +203,7 @@
         this.source.noteOff(params.time);
       }
       this.playing = false;
-      var currentTime = _Sound.ctx.currentTime;
+      var currentTime = this.ctx.currentTime;
       if (params.time != "undefined") {
         currentTime = params.time;
       }
@@ -213,7 +220,7 @@
         return this;
       }
       var params = defaults(options || {}, {
-        time: _Sound.ctx.currentTime
+        time: this.ctx.currentTime
       });
       this.source.onended = identity;
       if (this.source.stop) {
@@ -244,7 +251,7 @@
       }
     }
     get currentTime() {
-      return this.playing ? (_Sound.ctx.currentTime - __privateGet(this, _startTime) + __privateGet(this, _offset)) * __privateGet(this, _speed) : __privateGet(this, _offset);
+      return this.playing ? (this.ctx.currentTime - __privateGet(this, _startTime) + __privateGet(this, _offset)) * __privateGet(this, _speed) : __privateGet(this, _offset);
     }
     set currentTime(t) {
       var time;
@@ -271,7 +278,6 @@
       return this.buffer.duration;
     }
   };
-  var Sound = _Sound;
   _loop = new WeakMap();
   _volume = new WeakMap();
   _speed = new WeakMap();
@@ -282,7 +288,6 @@
     this.playing = false;
   };
   __publicField(Sound, "has", has);
-  __publicField(Sound, "ctx", null);
 
   // src/renderer.js
   var Renderer = class {
@@ -491,6 +496,7 @@
 
   // src/equalizer.js
   var _Equalizer = class {
+    analysed;
     analyser;
     domElement;
     nodes;
@@ -560,11 +566,11 @@
         r.onerror = reject;
         r.onload = function() {
           var data = JSON.parse(r.response);
-          scope.analyzed = data;
+          scope.analysed = data;
           if (callback) {
             callback();
           }
-          resolve(scope.analyzed);
+          resolve(scope.analysed);
         };
         r.send();
       });
@@ -584,13 +590,13 @@
       return null;
     }
     update(currentTime, silent) {
-      if (this.analyzed) {
-        var sid = Math.floor(currentTime * this.analyzed.frameRate);
-        var sample = this.analyzed.samples[sid];
+      if (this.analysed) {
+        var sid = Math.floor(currentTime * this.analysed.frameRate);
+        var sample = this.analysed.samples[sid];
         if (sample) {
           this.analyser.data = Uint8Array.from(sample);
         } else {
-          this.analyzer.data = new Uint8Array(this.analyzed.resolution);
+          this.analyser.data = new Uint8Array(this.analysed.resolution);
         }
       } else {
         this.analyser.getByteFrequencyData(this.analyser.data);
@@ -654,7 +660,7 @@
         i++;
       }
       this.average.render(this.renderer.ctx);
-      if (this.analyzed) {
+      if (this.analysed) {
       } else {
         this.analyser.getByteTimeDomainData(this.analyser.data);
       }
@@ -670,6 +676,18 @@
       }
       this.average.index = 1;
       return this;
+    }
+    get analyzer() {
+      return this.analyser;
+    }
+    set analyzer(v) {
+      this.analyser = v;
+    }
+    get analyzed() {
+      return this.analysed;
+    }
+    set analyzed(v) {
+      this.analysed = v;
     }
   };
   var Equalizer = _Equalizer;  window.Equalizer = Equalizer;
