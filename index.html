@@ -17,24 +17,15 @@
           <a href="http://github.com/jonobr1/equalizer">Source Code</a> &middot; <a href="https://github.com/jonobr1/equalizer/blob/master/license.txt" target="_blank">MIT</a>
         </p>
         <p id="instructions">
-          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray box. Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed. Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands"></span> bands representing different amplitudes at equally spaced frequency bandwidths.
+          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray outline box above. Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed. Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands"></span> bands representing different amplitudes at equally spaced frequency bandwidths.
         </p>
-        <p>
-          You can hit the <span id="record-button" class="action">gray circle</span> to record &ldquo;beats&rdquo; from the equalizer to the staff. Once recording has been enabled you can click and drag to scrub through the staff and scroll (i.e: use your computer&apos;s mousewheel) to change the scale of the staff&apos;s viewport.
-        </p>
-        <p>
-          <span class="nota-bene">Be careful: recording <a class="explanation" href="https://en.wikipedia.org/wiki/Overdubbing" target="_blank">overdubs</a> so you can build on top of what already exists on the staff.</span>
-        </p>
-        <p>
-          Opposite the recording functionality you find a series of diamonds. By default they&apos;re orange. This means that the track is <strong>active</strong> and the act of recording will add new data to the track. Click on a diamond to toggle its ability to record. <span id="ctrl-or-command"></span> + click a diamond to toggle all tracks. This is handy to solo a track.
-        </p>
-        <p>
-          Finally, you can <span id="export" class="action">export</span> and <span id="import" class="action">import</span> data as JSON with the below text field:
+        <!-- <p>
+          You can also <span id="export" class="action">export</span> and <span id="import" class="action">import</span> data as JSON with the below text field:
           <br />
           <textarea width="300" height="200"></textarea>
-        </p>
+        </p> -->
         <br />
-        <h2 id="examples">
+        <!-- <h2 id="examples">
           Examples
         </h2>
         <p>
@@ -43,7 +34,7 @@
         <ul>
           <li>Real-time Analysis</li>
           <li>Choreographed Data</li>
-        </ul>
+        </ul> -->
         <p id="post-scriptum">
           Created <span id="created-date"></span> and updated <span id="updated-date"></span>.
           <br />
@@ -53,22 +44,29 @@
       </div>
     </div>
     <div class="scripts">
-      <script src="./third-party/url.js"></script>
       <script type="module">
 
-        import Equalizer from './src/equalizer.js';
-        import Sound from './src/sound.js';
+        import * as qp from './third-party/query-params.js';
+        import { Equalizer } from './src/equalizer.js';
+        import { Sound } from './src/sound.js';
 
         if (!Sound.has) {
           throw new Error('Sound: Unable to identify the Web Audio API');
         }
 
-        Equalizer.Resolution = url.number('resolution', 16);
-        document.querySelector('#bands').textContent = Equalizer.Resolution;
+        var params = qp.get();
+        var $ = {
+          tool: document.querySelector('#tool'),
+          spacebar: document.querySelector('#spacebar'),
+          bands: document.querySelector('#bands'),
+          export: document.querySelector('#export'),
+          import: document.querySelector('#import')
+        };
+
+        Equalizer.Resolution = typeof params.resolution === 'number' ? params.resolution : 16;
 
         var context = new (AudioContext || webkitAudioContext)();
-        var equalizer = new Equalizer(context)
-          .appendTo(document.querySelector('#tool'));
+        var equalizer = new Equalizer(context).appendTo($.tool);
         var elem = equalizer.domElement;
         var sound;
 
@@ -76,24 +74,39 @@
         elem.style.margin = '20px';
         elem.style.border = '1px solid #ccc';
 
-        document.querySelector('#ctrl-or-command').textContent
-          = /mac/i.test(window.navigator.platform) ? 'cmd' : 'ctrl';
+        $.bands.textContent = Equalizer.Resolution;
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'https://api.github.com/repos/jonobr1/equalizer');
-        xhr.onreadystatechange = function() {
-          if (!(xhr.readyState === 4 && xhr.status === 200)) {
-            return;
+        elem.addEventListener('drop', drop, false);
+        elem.addEventListener('dragover', dragover, false);
+        elem.addEventListener('dragleave', dragleave);
+        elem.addEventListener('click', toggle, false);
+        $.spacebar.addEventListener('click', toggle, false);
+        // document.querySelector('#export').addEventListener('click', function() {
+        //   if (!equalizer.timeline) {
+        //     return;
+        //   }
+        //   var textarea = document.querySelector('textarea');
+        //   textarea.innerHTML = JSON.stringify(equalizer.timeline.toJSON());
+        // }, false);
+        // document.querySelector('#import').addEventListener('click', function() {
+        //   var textarea = document.querySelector('textarea');
+        //   if (!loop.init) {
+        //     loop();
+        //     loop.init = true;
+        //   }
+        // }, false);
+
+        equalizer.update();
+
+        function setup() {
+          equalizer.add(sound.gain);
+          if (!loop.init) {
+            loop();
+            loop.init = true;
           }
-          var resp = JSON.parse(xhr.responseText);
-          document.querySelector('#updated-date').innerHTML
-            = formatDate(resp.pushed_at);
-          document.querySelector('#created-date').innerHTML
-            = formatDate(resp.created_at);
-        };
-        xhr.send();
+        }
 
-        elem.addEventListener('drop', function(e) {
+        function drop(e) {
 
           e.stopPropagation();
           e.preventDefault();
@@ -111,56 +124,25 @@
             if (sound) {
               sound.stop();
             }
-            sound = new Sound(data, setup);
+            sound = new Sound(context, data, setup);
             sound.url = file.name;
             equalizer.reset();
           };
 
           reader.readAsArrayBuffer(file);
 
-        }, false);
-        elem.addEventListener('dragover', function(e) {
+        }
+
+        function dragover(e) {
           e.stopPropagation();
           e.preventDefault();
           elem.style.background = 'rgba(200, 255, 150, 0.33)';
-        }, false);
-        elem.addEventListener('dragleave', function(e) {
+        }
+
+        function dragleave(e) {
           e.stopPropagation();
           e.preventDefault();
           elem.style.background = 'transparent';
-        });
-
-        elem.addEventListener('click', toggle, false);
-        document.querySelector('#spacebar').addEventListener('click', toggle, false);
-        document.querySelector('#record-button').addEventListener('click', function() {
-          if (!equalizer.timeline) {
-            return;
-          }
-          equalizer.timeline.recording.enabled = !equalizer.timeline.recording.enabled;
-        }, false);
-        document.querySelector('#export').addEventListener('click', function() {
-          if (!equalizer.timeline) {
-            return;
-          }
-          var textarea = document.querySelector('textarea');
-          textarea.innerHTML = JSON.stringify(equalizer.timeline.toJSON());
-        }, false);
-        document.querySelector('#import').addEventListener('click', function() {
-          var textarea = document.querySelector('textarea');
-          if (!loop.init) {
-            loop();
-            loop.init = true;
-          }
-        }, false);
-
-        equalizer.update();
-
-        function setup() {
-          equalizer.sound = sound;
-          if (!loop.init) {
-            loop();
-            loop.init = true;
-          }
         }
 
         function loop() {
@@ -169,11 +151,33 @@
         }
 
         function toggle() {
-          if (equalizer.sound.playing) {
-            equalizer.sound.pause();
-          } else {
-            equalizer.sound.play();
+          if (!sound) {
+            alert('You need to drop an audio file before the equalizer can run.');
+            return;
           }
+          if (sound.playing) {
+            sound.pause();
+          } else {
+            sound.play();
+          }
+        }
+
+        function updateStats() {
+
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'https://api.github.com/repos/jonobr1/equalizer');
+          xhr.onreadystatechange = function() {
+            if (!(xhr.readyState === 4 && xhr.status === 200)) {
+              return;
+            }
+            var resp = JSON.parse(xhr.responseText);
+            document.querySelector('#updated-date').innerHTML
+              = formatDate(resp.pushed_at);
+            document.querySelector('#created-date').innerHTML
+              = formatDate(resp.created_at);
+          };
+          xhr.send();
+
         }
 
         function formatDate(time) {

@@ -1,9 +1,9 @@
-import Sound from './sound.js';
+import { Sound } from './sound.js';
 import { Renderer, Line, Circle, Point, Polyline } from './renderer.js';
 import { clamp, extend, mod } from './underscore.js';
 import { styles, colors } from './styles.js';
 
-export default class Equalizer {
+export class Equalizer {
 
   static Precision = 0; // [0, 255]
   static Resolution = 16;

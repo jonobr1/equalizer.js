@@ -12,7 +12,7 @@ try {
   has = false;
 }
 
-function load(uri, callback) {
+function load({ context, uri, callback }) {
 
   return new Promise(function(resolve, reject) {
 
@@ -23,6 +23,7 @@ function load(uri, callback) {
     r.onerror = reject;
     r.onload = function() {
       resolve({
+        context,
         data: r.response,
         callback
       });
@@ -34,7 +35,7 @@ function load(uri, callback) {
 
 }
 
-function decode({ data, callback }) {
+function decode({ context, data, callback }) {
 
   return new Promise(function(resolve, reject) {
 
@@ -45,14 +46,14 @@ function decode({ data, callback }) {
       }
     };
 
-    Sound.ctx.decodeAudioData(data, success, reject);
+    context.decodeAudioData(data, success, reject);
 
   });
 
 }
 
 
-export default class Sound {
+export class Sound {
 
   #loop = false;
   #volume = 1.0;
@@ -64,30 +65,36 @@ export default class Sound {
   filter = null;
   gain = null;
   src = null;
+  ctx = null;
 
   static has = has;
-  static ctx = null;
 
-  constructor(url, callback, context) {
+  constructor(context, uri, callback) {
 
     var scope = this;
 
-    if (context) {
-      Sound.ctx = context;
-    } else {
-      Sound.ctx = new Context();
+    switch (arguments.length) {
+      case 1:
+      case 2:
+        callback = uri;
+        uri = context;
+        context = new Context();
+        break;
     }
 
-    switch (typeof url) {
+    this.ctx = context;
+
+    switch (typeof uri) {
 
       case 'string':
-        this.src = url;
-        load(url, assignBuffer).then(decode);
+        this.src = uri;
+        load({ context, uri, callback: assignBuffer }).then(decode);
         break;
 
       case 'object':
         decode({
-          data: url,
+          context,
+          data: uri,
           callback: assignBuffer
         });
         break;
@@ -98,8 +105,8 @@ export default class Sound {
 
       scope.buffer = buffer;
 
-      scope.gain = scope.filter = Sound.ctx.createGain();
-      scope.gain.connect(Sound.ctx.destination);
+      scope.gain = scope.filter = context.createGain();
+      scope.gain.connect(context.destination);
       scope.gain.gain.value = Math.max(Math.min(scope.#volume, 1.0), 0.0);
 
       if (callback) {
@@ -130,14 +137,14 @@ export default class Sound {
   play(options) {
 
     var params = defaults(options || {}, {
-      time: Sound.ctx.currentTime,
+      time: this.ctx.currentTime,
       loop: this._loop,
       offset: this._offset,
       duration: this.buffer.duration - this._offset
     });
 
-    if (Sound.ctx && /suspended/i.test(Sound.ctx.state)) {
-      Sound.ctx.resume();
+    if (this.ctx && /suspended/i.test(this.ctx.state)) {
+      this.ctx.resume();
     }
 
     if (this.source) {
@@ -148,7 +155,7 @@ export default class Sound {
     this.#loop = params.loop;
     this.playing = true;
 
-    this.source = Sound.ctx.createBufferSource();
+    this.source = this.ctx.createBufferSource();
     this.source.onended = this.#ended;
     this.source.buffer = this.buffer;
     this.source.loop = params.loop;
@@ -173,7 +180,7 @@ export default class Sound {
     }
 
     var params = defaults(options || {}, {
-      time: Sound.ctx.currentTime
+      time: this.ctx.currentTime
     });
 
     this.source.onended = identity;
@@ -186,7 +193,7 @@ export default class Sound {
 
     this.playing = false;
 
-    var currentTime = Sound.ctx.currentTime;
+    var currentTime = this.ctx.currentTime;
     if (params.time != 'undefined') {
       currentTime = params.time;
     }
@@ -210,7 +217,7 @@ export default class Sound {
     }
 
     var params = defaults(options || {}, {
-      time: Sound.ctx.currentTime
+      time: this.ctx.currentTime
     });
 
     this.source.onended = identity;
@@ -252,7 +259,7 @@ export default class Sound {
 
   get currentTime() {
     return this.playing
-      ? (Sound.ctx.currentTime - this.#startTime + this.#offset) * this.#speed
+      ? (this.ctx.currentTime - this.#startTime + this.#offset) * this.#speed
       : this.#offset;
   }
 
