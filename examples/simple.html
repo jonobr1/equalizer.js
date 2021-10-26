@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    Click on the equalizer below to start playing the oscillator:
+    <br />
+    <br />
+    <script type="module">
+
+      import { Equalizer } from '../src/equalizer.js';
+
+      var playing = false;
+      var context = new AudioContext(); // From Web Audio API
+      var equalizer = new Equalizer(context).appendTo(document.body);
+
+      equalizer.renderer.domElement.style.border = '1px solid #ccc';
+      equalizer.renderer.domElement.style.cursor = 'pointer';
+
+      // Create audible sound with the Web Audio API
+      var osc = context.createOscillator();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(440, context.currentTime);
+      osc.connect(context.destination);
+      osc.start();
+
+      // Add the oscillator to the equalizer
+      equalizer.add(osc);
+
+      equalizer.domElement.addEventListener('click', resume, false);
+      update();
+
+      function resume() {
+        if (!(/running/.test(context.state))) {
+          context.resume();
+        }
+      }
+
+      function update() {
+        equalizer.update();
+        requestAnimationFrame(update);
+      }
+
+    </script>
+  </body>
+</html>
