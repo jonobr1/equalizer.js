@@ -11,6 +11,6 @@ Check out the [gh-pages](https://jonobr1.github.io/equalizer) for use.
 + [x] Remove `Equalizer.Timeline`
 + [x] Remove Two.js dependency and write in vanilla canvas
 + [x] ES6 export module
-+ [ ] Move `Band` to be its own ES6 class
-+ [ ] Create TypeScript types
++ [x] Move `Band` to be its own ES6 class
++ [x] Create TypeScript types
 + [ ] Publish to npm
