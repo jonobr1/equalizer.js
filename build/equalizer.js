@@ -97,9 +97,9 @@
   function decode({ context, data, callback }) {
     return new Promise(function(resolve, reject) {
       var success = function(buffer) {
-        resolve(buffer);
+        resolve(buffer, data);
         if (callback) {
-          callback(buffer);
+          callback(buffer, data);
         }
       };
       context.decodeAudioData(data, success, reject);
@@ -116,18 +116,12 @@
       __privateAdd(this, _offset, 0);
       __publicField(this, "playing", false);
       __publicField(this, "filter", null);
+      __publicField(this, "buffer", null);
+      __publicField(this, "data", null);
       __publicField(this, "gain", null);
       __publicField(this, "src", null);
       __publicField(this, "ctx", null);
       var scope = this;
-      switch (arguments.length) {
-        case 1:
-        case 2:
-          callback = uri;
-          uri = context;
-          context = new Context();
-          break;
-      }
       this.ctx = context;
       switch (typeof uri) {
         case "string":
@@ -142,8 +136,9 @@
           });
           break;
       }
-      function assignBuffer(buffer) {
+      function assignBuffer(buffer, data) {
         scope.buffer = buffer;
+        scope.data = data;
         scope.gain = scope.filter = context.createGain();
         scope.gain.connect(context.destination);
         scope.gain.gain.value = Math.max(Math.min(__privateGet(scope, _volume), 1), 0);
@@ -157,7 +152,7 @@
         this.filter.disconnect(this.gain);
       }
       this.filter = node;
-      this.gain.connect(this.filter);
+      this.filter.connect(this.gain);
       return this;
     }
     play(options) {
@@ -507,7 +502,6 @@
       this.ctx = context || Sound.ctx;
       this.nodes = [];
       this.analyser = this.ctx.createAnalyser();
-      this.analyser.connect(this.ctx.destination);
       this.analyser.fftSize = fftSize || this.analyser.frequencyBinCount;
       this.analyser.data = new Uint8Array(this.analyser.frequencyBinCount);
       this.domElement = document.createElement("div");
@@ -692,6 +686,7 @@
   };
   var Equalizer = _Equalizer;  window.Equalizer = Equalizer;
   __publicField(Equalizer, "Precision", 0);
+  __publicField(Equalizer, "FrameRate", 30);
   __publicField(Equalizer, "Resolution", 16);
   __publicField(Equalizer, "Drag", 5e-3);
   __publicField(Equalizer, "Drift", 0.33);
