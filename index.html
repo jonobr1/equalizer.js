@@ -89,6 +89,7 @@
         $.export.addEventListener('click', generateAnalysis, false);
         $.import.addEventListener('click', importAnalysis, false);
         $.download.addEventListener('click', download, false);
+        window.addEventListener('keyup', keyup, false);
 
         equalizer.update();
 
@@ -139,10 +140,18 @@
           elem.style.background = 'transparent';
         }
 
+        function keyup(e) {
+          switch (e.which) {
+            case 32:
+              toggle();
+              break;
+          }
+        }
+
         function loop() {
           requestAnimationFrame(loop);
           if (sound.playing) {
-            equalizer.update();
+            equalizer.update(sound.currentTime);
           }
         }
 
@@ -197,7 +206,7 @@
           function render(){
 
             var pct = Math.round(100 * elapsed / s.duration);
-            $.textarea.textContent = `Generating Analysis\n${pct}%`;
+            $.textarea.value = `Generating Analysis\n${pct}%`;
 
             if (elapsed >= s.duration) {
               complete();
@@ -227,7 +236,7 @@
 
           function complete() {
             $.textarea.classList.remove('processing');
-            $.textarea.textContent = JSON.stringify(result);
+            $.textarea.value = JSON.stringify(result);
             $.download.classList.remove('hidden');
             $.download.result = result;
           }
@@ -235,7 +244,18 @@
         }
 
         function importAnalysis(e) {
-          console.log('TODO');
+
+          try {
+
+            var result = JSON.parse($.textarea.value);
+            $.download.result = result;
+            equalizer.analysed = result;
+
+          } catch(e) {
+            console.error(e);
+            alert('Unable to parse JSON in textarea');
+          }
+
         }
 
         function download() {
