@@ -34,7 +34,7 @@ This example creates an audio oscillator and visualizes it with an instance of `
     <meta charset="utf-8">
   </head>
   <body>
-    <script src="../build/equalizer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/equalizer.js/build/equalizer.js"></script>
     <script>
 
     var playing = false;
