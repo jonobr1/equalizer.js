@@ -68,13 +68,10 @@ function mod(v, l) {
 var identity = function(v) {
   return v;
 };
-var Context;
 var has;
 try {
-  Context = AudioContext || webkitAudioContext;
-  has = !!Context;
+  has = !!AudioContext;
 } catch (e) {
-  Context = null;
   has = false;
 }
 function load({ context, uri, callback }) {
@@ -104,7 +101,7 @@ function decode({ context, data, callback }) {
     context.decodeAudioData(data, success, reject);
   });
 }
-var _loop, _volume, _speed, _startTime, _offset, _ended, __create;
+var _loop, _volume, _speed, _startTime, _offset, _ended, ended_fn;
 var Sound = class {
   constructor(context, uri, callback) {
     __privateAdd(this, _ended);
@@ -171,7 +168,7 @@ var Sound = class {
     __privateSet(this, _loop, params.loop);
     this.playing = true;
     this.source = this.ctx.createBufferSource();
-    this.source.onended = __privateMethod(this, _ended, __create);
+    this.source.onended = __privateMethod(this, _ended, ended_fn);
     this.source.buffer = this.buffer;
     this.source.loop = params.loop;
     this.source.playbackRate.value = __privateGet(this, _speed);
@@ -250,7 +247,7 @@ var Sound = class {
   set currentTime(t) {
     var time;
     if (!this.buffer) {
-      return this;
+      return;
     }
     if (__privateGet(this, _loop)) {
       time = Math.max(t, 0) % this.buffer.duration;
@@ -278,7 +275,7 @@ _speed = new WeakMap();
 _startTime = new WeakMap();
 _offset = new WeakMap();
 _ended = new WeakSet();
-__create = function() {
+ended_fn = function() {
   this.playing = false;
 };
 __publicField(Sound, "has", has);
@@ -605,9 +602,7 @@ var _Equalizer = class {
       if (k !== 0) {
         continue;
       }
-      var pct = i / this.bands.length;
       var band = this.bands[i];
-      var value = band.value;
       var peak = band.peak.value;
       var direction, changedDirection, y, anchor;
       band.value = sum / bin;
