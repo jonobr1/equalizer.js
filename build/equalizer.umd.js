@@ -297,63 +297,33 @@ var Renderer = class {
   ctx;
   constructor(width, height) {
     this.domElement = document.createElement("canvas");
-    this.domElement.width = width;
-    this.domElement.height = height;
+    this.domElement.width = width * window.devicePixelRatio;
+    this.domElement.height = height * window.devicePixelRatio;
+    this.domElement.style.width = width + "px";
+    this.domElement.style.height = height + "px";
     this.ctx = this.domElement.getContext("2d");
     this.children = [];
   }
   get width() {
-    return this.domElement.width;
+    return this.domElement.width / window.devicePixelRatio;
   }
   get height() {
-    return this.domElement.height;
-  }
-  add() {
-    for (var i = 0; i < arguments.length; i++) {
-      var child = arguments[i];
-      var index = this.children.indexOf(child);
-      if (index < 0) {
-        this.children.push(child);
-      } else {
-        this.children.splice(index, 1);
-        this.children.push(child);
-      }
-    }
-    return this;
-  }
-  remove() {
-    for (var i = 0; i < arguments.length; i++) {
-      var child = arguments[i];
-      var index = this.children.indexOf(child);
-      if (index >= 0) {
-        this.children.splice(index, 1);
-      }
-    }
-    return this;
+    return this.domElement.height / window.devicePixelRatio;
   }
   appendTo(elem) {
     elem.appendChild(this.domElement);
     return this;
   }
+  save() {
+    this.ctx.save();
+    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
+  restore() {
+    this.ctx.restore();
+  }
   clear() {
     this.ctx.clearRect(0, 0, this.domElement.width, this.domElement.height);
     return this;
-  }
-  render() {
-    for (var i = 0; i < this.children.length; i++) {
-      this.children[i].render(this.ctx);
-    }
-    return this;
-  }
-};
-var Point = class {
-  x = 0;
-  y = 0;
-  value = 0;
-  sum = 0;
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
   }
 };
 var Shape = class {
@@ -362,10 +332,8 @@ var Shape = class {
   stroke = "#000";
   opacity = 1;
   updated = false;
-  position;
   scale = 1;
   constructor() {
-    this.position = new Point();
   }
   noStroke() {
     this.stroke = "transparent";
@@ -407,6 +375,19 @@ var Line = class extends Shape {
     return this;
   }
 };
+var Band = class extends Line {
+  value = 0;
+  peak = new Peak(0, 0, 0, 0);
+  beat = new Circle(0, 0, 0);
+  direction = new Direction(0, 0, 0, 0);
+};
+var Peak = class extends Line {
+  value = 0;
+  updated = false;
+};
+var Direction = class extends Line {
+  value = 0;
+};
 var Circle = class extends Shape {
   x = 0;
   y = 0;
@@ -427,6 +408,14 @@ var Circle = class extends Shape {
     return this;
   }
 };
+var Anchor = class extends Circle {
+  sum = 0;
+  value = 0;
+  updated = false;
+  constructor(x, y, r) {
+    super(x, y, r);
+  }
+};
 var Polyline = class extends Shape {
   vertices;
   index = 0;
@@ -437,8 +426,9 @@ var Polyline = class extends Shape {
   render(ctx) {
     super.render(ctx);
     ctx.beginPath();
-    for (var i = 0; i < this.vertices.length; i++) {
-      var v = this.vertices[i];
+    var i, v;
+    for (i = 0; i < this.vertices.length; i++) {
+      v = this.vertices[i];
       if (i === 0) {
         ctx.moveTo(v.x, v.y);
       } else {
@@ -448,6 +438,12 @@ var Polyline = class extends Shape {
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+    for (i = 0; i < this.vertices.length; i++) {
+      v = this.vertices[i];
+      if (v.render) {
+        v.render(ctx);
+      }
+    }
   }
 };
 
@@ -520,33 +516,35 @@ var _Equalizer = class {
     for (var i = 0; i < _Equalizer.Resolution; i++) {
       var pct = (i + 0.5) / _Equalizer.Resolution;
       var x = pct * this.renderer.width;
-      var band = new Line(x, 0, x, 0);
+      var band = new Band(x, 0, x, 0);
       band.value = 0;
       band.linewidth = this.renderer.width / _Equalizer.Resolution * 0.85;
       band.stroke = colors["bbb"];
       band.noFill();
       band.opacity = 0.5;
-      band.peak = new Line(x - band.linewidth / 2, 0, x + band.linewidth / 2, 0);
+      band.peak.x1 = x - band.linewidth / 2;
+      band.peak.x2 = x + band.linewidth / 2;
       band.peak.value = 0;
       band.peak.updated = false;
       band.peak.stroke = colors["888"];
       band.peak.noFill();
       band.peak.linewidth = 2;
-      band.beat = new Circle(x, this.renderer.height * 0.125, 2);
+      band.beat.x = x;
+      band.beat.y = this.renderer.height * 0.125;
+      band.beat.r = 2;
       band.beat.noStroke();
       band.beat.fill = colors.blue;
-      band.direction = new Line(x - band.linewidth / 2, 0, x + band.linewidth / 2, 0);
+      band.direction.x1 = x - band.linewidth / 2;
+      band.direction.x2 = x + band.linewidth / 2;
       band.direction.value = 0;
       band.direction.stroke = colors.red;
       band.direction.noFill();
       band.direction.linewidth = 2;
-      var anchor = new Point(x, 0);
-      anchor.sum = 0;
-      vertices.push(anchor);
-      anchor.outlier = new Circle(0, 0, 1);
-      anchor.outlier.noStroke();
-      anchor.outlier.fill = colors.purple;
+      var anchor = new Anchor(x, 0, 1);
+      anchor.noStroke();
+      anchor.fill = colors.purple;
       this.bands.push(band);
+      vertices.push(anchor);
     }
     this.average = new Polyline(vertices);
     this.average.stroke = colors.gold;
@@ -607,6 +605,7 @@ var _Equalizer = class {
     var sum = 0;
     var bin = Math.floor(step);
     this.renderer.clear();
+    this.renderer.save();
     for (var j = 0, i = 0; j < this.analyser.data.length; j++) {
       var k = mod(Math.floor(j - bin / 2), bin);
       sum += clamp(this.analyser.data[j], 0, 255);
@@ -645,11 +644,11 @@ var _Equalizer = class {
       anchor.value = anchor.sum / this.average.index;
       anchor.y = this.renderer.height - height * anchor.value / _Equalizer.Amplitude;
       if (Math.abs(band.value - anchor.value) > _Equalizer.Amplitude * _Equalizer.Threshold) {
-        anchor.outlier.scale = 2;
-        anchor.outlier.updated = true;
+        anchor.scale = 2;
+        anchor.updated = true;
       } else {
-        anchor.outlier.scale += (1 - anchor.outlier.scale) * _Equalizer.Drift;
-        anchor.outlier.updated = false;
+        anchor.scale += (1 - anchor.scale) * _Equalizer.Drift;
+        anchor.updated = false;
       }
       band.render(this.renderer.ctx);
       band.peak.render(this.renderer.ctx);
@@ -659,6 +658,7 @@ var _Equalizer = class {
       i++;
     }
     this.average.render(this.renderer.ctx);
+    this.renderer.restore();
     if (this.analysed) {
     } else {
       this.analyser.getByteTimeDomainData(this.analyser.data);
