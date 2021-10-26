@@ -4,6 +4,7 @@
   "description": "An audio analysis tool for real-time and choreographed visualizations.",
   "main": "build/equalizer.js",
   "module": "src/equalizer.js",
+  "types": "types.d.ts",
   "scripts": {
     "build": "node ./utils/build.js",
     "lint": "eslint . --fix",
