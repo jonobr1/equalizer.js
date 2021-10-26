@@ -6,8 +6,10 @@ class Renderer {
   constructor(width, height) {
 
     this.domElement = document.createElement('canvas');
-    this.domElement.width = width;
-    this.domElement.height = height;
+    this.domElement.width = width * window.devicePixelRatio;
+    this.domElement.height = height * window.devicePixelRatio;
+    this.domElement.style.width = width + 'px';
+    this.domElement.style.height = height + 'px';
 
     this.ctx = this.domElement.getContext('2d');
     this.children = [];
@@ -15,35 +17,10 @@ class Renderer {
   }
 
   get width() {
-    return this.domElement.width;
+    return this.domElement.width / window.devicePixelRatio;
   }
   get height() {
-    return this.domElement.height;
-  }
-
-  add() {
-    for (var i = 0; i < arguments.length; i++) {
-      var child = arguments[i];
-      var index = this.children.indexOf(child);
-      if (index < 0) {
-        this.children.push(child);
-      } else {
-        this.children.splice(index, 1);
-        this.children.push(child);
-      }
-    }
-    return this;
-  }
-
-  remove() {
-    for (var i = 0; i < arguments.length; i++) {
-      var child = arguments[i];
-      var index = this.children.indexOf(child);
-      if (index >= 0) {
-        this.children.splice(index, 1);
-      }
-    }
-    return this;
+    return this.domElement.height / window.devicePixelRatio;
   }
 
   appendTo(elem) {
@@ -51,19 +28,18 @@ class Renderer {
     return this;
   }
 
+  save() {
+    this.ctx.save();
+    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
+
+  restore() {
+    this.ctx.restore();
+  }
+
   clear() {
     this.ctx.clearRect(0, 0, this.domElement.width, this.domElement.height);
     return this;
-  }
-
-  render() {
-
-    for (var i = 0; i < this.children.length; i++) {
-      this.children[i].render(this.ctx);
-    }
-
-    return this;
-
   }
 
 }
@@ -89,12 +65,9 @@ class Shape {
   stroke = '#000';
   opacity = 1;
   updated = false;
-  position;
   scale = 1;
 
-  constructor() {
-    this.position = new Point();
-  }
+  constructor() {}
 
   noStroke() {
     this.stroke = 'transparent';
@@ -145,6 +118,28 @@ class Line extends Shape {
 
 }
 
+class Band extends Line {
+
+  value = 0;
+  peak = new Peak(0, 0, 0, 0);
+  beat = new Circle(0, 0, 0);
+  direction = new Direction(0, 0, 0, 0);
+
+}
+
+class Peak extends Line {
+
+  value = 0;
+  updated = false;
+
+}
+
+class Direction extends Line {
+
+  value = 0;
+
+}
+
 class Circle extends Shape {
 
   x = 0;
@@ -170,6 +165,18 @@ class Circle extends Shape {
 
 }
 
+class Anchor extends Circle {
+
+  sum = 0;
+  value = 0;
+  updated = false;
+
+  constructor(x, y, r) {
+    super(x, y, r);
+  }
+
+}
+
 class Polyline extends Shape {
 
   vertices;
@@ -183,8 +190,9 @@ class Polyline extends Shape {
   render(ctx) {
     super.render(ctx);
     ctx.beginPath();
-    for (var i = 0; i < this.vertices.length; i++) {
-      var v = this.vertices[i];
+    var i, v;
+    for (i = 0; i < this.vertices.length; i++) {
+      v = this.vertices[i];
       if (i === 0) {
         ctx.moveTo(v.x, v.y);
       } else {
@@ -194,6 +202,12 @@ class Polyline extends Shape {
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+    for (i = 0; i < this.vertices.length; i++) {
+      v = this.vertices[i];
+      if (v.render) {
+        v.render(ctx);
+      }
+    }
   }
 
 }
@@ -203,7 +217,9 @@ export {
   Point,
   Renderer,
   Shape,
+  Band,
   Line,
   Circle,
+  Anchor,
   Polyline
 };

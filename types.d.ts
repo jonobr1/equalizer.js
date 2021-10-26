@@ -28,6 +28,7 @@ declare module "sound" {
         get currentTime(): number;
         get millis(): number;
         get duration(): any;
+        #private;
     }
 }
 declare module "renderer" {
@@ -45,11 +46,10 @@ declare module "renderer" {
         children: any[];
         get width(): number;
         get height(): number;
-        add(...args: any[]): Renderer;
-        remove(...args: any[]): Renderer;
         appendTo(elem: any): Renderer;
+        save(): void;
+        restore(): void;
         clear(): Renderer;
-        render(): Renderer;
     }
     export class Shape {
         fill: string;
@@ -57,11 +57,15 @@ declare module "renderer" {
         stroke: string;
         opacity: number;
         updated: boolean;
-        position: Point;
         scale: number;
         noStroke(): Shape;
         noFill(): Shape;
         render(ctx: any): void;
+    }
+    export class Band extends Line {
+        peak: Peak;
+        beat: Circle;
+        direction: Direction;
     }
     export class Line extends Shape {
         constructor(x1: any, y1: any, x2: any, y2: any);
@@ -77,11 +81,20 @@ declare module "renderer" {
         y: number;
         r: number;
     }
+    export class Anchor extends Circle {
+        sum: number;
+        value: number;
+    }
     export class Polyline extends Shape {
         constructor(vertices: any);
         vertices: any;
         index: number;
     }
+    class Peak extends Line {
+    }
+    class Direction extends Line {
+    }
+    export {};
 }
 declare module "styles" {
     export namespace styles {
@@ -146,7 +159,7 @@ declare module "equalizer" {
         domElement: HTMLDivElement;
         nodes: any[];
         renderer: Renderer;
-        bands: Line[];
+        bands: Band[];
         average: Polyline;
         ctx: any;
         appendTo(elem: any): Equalizer;
@@ -161,7 +174,7 @@ declare module "equalizer" {
         get analyzed(): any;
     }
     import { Renderer } from "renderer";
-    import { Line } from "renderer";
+    import { Band } from "renderer";
     import { Polyline } from "renderer";
     import { Sound } from "sound";
 }

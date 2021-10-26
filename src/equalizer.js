@@ -1,5 +1,5 @@
 import { Sound } from './sound.js';
-import { Renderer, Line, Circle, Point, Polyline } from './renderer.js';
+import { Renderer, Band, Anchor, Polyline } from './renderer.js';
 import { clamp, extend, mod } from './underscore.js';
 import { styles, colors } from './styles.js';
 
@@ -46,7 +46,7 @@ export class Equalizer {
       var pct = (i + 0.5) / Equalizer.Resolution;
       var x = pct * this.renderer.width;
 
-      var band = new Line(x, 0, x, 0);
+      var band = new Band(x, 0, x, 0);
 
       band.value = 0;
       band.linewidth = (this.renderer.width / Equalizer.Resolution) * 0.85;
@@ -55,8 +55,8 @@ export class Equalizer {
       band.noFill();
       band.opacity = 0.5;
 
-      band.peak = new Line(x - band.linewidth / 2, 0,
-        x + band.linewidth / 2, 0);
+      band.peak.x1 = x - band.linewidth / 2;
+      band.peak.x2 = x + band.linewidth / 2;
 
       band.peak.value = 0;
       band.peak.updated = false;
@@ -64,28 +64,26 @@ export class Equalizer {
       band.peak.noFill();
       band.peak.linewidth = 2;
 
-      band.beat = new Circle(x, this.renderer.height * 0.125, 2);
+      band.beat.x = x;
+      band.beat.y = this.renderer.height * 0.125;
+      band.beat.r = 2;
       band.beat.noStroke();
       band.beat.fill = colors.blue;
 
-      band.direction = new Line(x - band.linewidth / 2, 0,
-        x + band.linewidth / 2, 0);
+      band.direction.x1 = x - band.linewidth / 2;
+      band.direction.x2 = x + band.linewidth / 2;
 
       band.direction.value = 0;
       band.direction.stroke = colors.red;
       band.direction.noFill();
       band.direction.linewidth = 2;
 
-      var anchor = new Point(x, 0);
-      anchor.sum = 0;
-      vertices.push(anchor);
+      var anchor = new Anchor(x, 0, 1);
+      anchor.noStroke();
+      anchor.fill = colors.purple;
 
-      anchor.outlier = new Circle(0, 0, 1);
-      anchor.outlier.noStroke();
-      anchor.outlier.fill = colors.purple;
-
-      // this.renderer.add(band, band.peak, band.beat, band.direction);
       this.bands.push(band);
+      vertices.push(anchor);
 
     }
 
@@ -95,8 +93,6 @@ export class Equalizer {
     this.average.linewidth = 1;
     this.average.noFill();
     this.average.index = 1;
-
-    // this.renderer.add(this.average);
 
   }
 
@@ -177,6 +173,7 @@ export class Equalizer {
     var bin = Math.floor(step);
 
     this.renderer.clear();
+    this.renderer.save();
 
     for (var j = 0, i = 0; j < this.analyser.data.length; j++) {
 
@@ -232,11 +229,11 @@ export class Equalizer {
 
       if (Math.abs(band.value - anchor.value)
         > Equalizer.Amplitude * Equalizer.Threshold) {
-        anchor.outlier.scale = 2;
-        anchor.outlier.updated = true;
+        anchor.scale = 2;
+        anchor.updated = true;
       } else {
-        anchor.outlier.scale += (1 - anchor.outlier.scale) * Equalizer.Drift;
-        anchor.outlier.updated = false;
+        anchor.scale += (1 - anchor.scale) * Equalizer.Drift;
+        anchor.updated = false;
       }
 
       band.render(this.renderer.ctx);
@@ -250,6 +247,7 @@ export class Equalizer {
     }
 
     this.average.render(this.renderer.ctx);
+    this.renderer.restore();
 
     if (this.analysed) {
       // TODO: Extrapolate the data to this.analyser.data
