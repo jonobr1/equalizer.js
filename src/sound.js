@@ -40,9 +40,9 @@ function decode({ context, data, callback }) {
   return new Promise(function(resolve, reject) {
 
     var success = function(buffer) {
-      resolve(buffer);
+      resolve(buffer, data);
       if (callback) {
-        callback(buffer);
+        callback(buffer, data);
       }
     };
 
@@ -63,6 +63,8 @@ export class Sound {
 
   playing = false;
   filter = null;
+  buffer = null;
+  data = null;
   gain = null;
   src = null;
   ctx = null;
@@ -72,15 +74,6 @@ export class Sound {
   constructor(context, uri, callback) {
 
     var scope = this;
-
-    switch (arguments.length) {
-      case 1:
-      case 2:
-        callback = uri;
-        uri = context;
-        context = new Context();
-        break;
-    }
 
     this.ctx = context;
 
@@ -101,9 +94,10 @@ export class Sound {
 
     }
 
-    function assignBuffer(buffer) {
+    function assignBuffer(buffer, data) {
 
       scope.buffer = buffer;
+      scope.data = data;
 
       scope.gain = scope.filter = context.createGain();
       scope.gain.connect(context.destination);
@@ -128,7 +122,7 @@ export class Sound {
     }
 
     this.filter = node;
-    this.gain.connect(this.filter);
+    this.filter.connect(this.gain);
 
     return this;
 

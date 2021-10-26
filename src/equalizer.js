@@ -6,6 +6,7 @@ import { styles, colors } from './styles.js';
 export class Equalizer {
 
   static Precision = 0; // [0, 255]
+  static FrameRate = 30;
   static Resolution = 16;
   static Drag = 0.005;
   static Drift = 0.33;
@@ -27,7 +28,6 @@ export class Equalizer {
     this.nodes = [];
 
     this.analyser = this.ctx.createAnalyser();
-    this.analyser.connect(this.ctx.destination);
     this.analyser.fftSize = fftSize || this.analyser.frequencyBinCount;
     this.analyser.data = new Uint8Array(this.analyser.frequencyBinCount);
 

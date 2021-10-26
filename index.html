@@ -17,13 +17,15 @@
           <a href="http://github.com/jonobr1/equalizer">Source Code</a> &middot; <a href="https://github.com/jonobr1/equalizer/blob/master/license.txt" target="_blank">MIT</a>
         </p>
         <p id="instructions">
-          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray outline box above. Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed. Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands"></span> bands representing different amplitudes at equally spaced frequency bandwidths.
+          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray outline box above. <!-- Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed.--> Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands"></span> bands representing different amplitudes at equally spaced frequency bandwidths.
         </p>
-        <!-- <p>
+        <p>
           You can also <span id="export" class="action">export</span> and <span id="import" class="action">import</span> data as JSON with the below text field:
           <br />
           <textarea width="300" height="200"></textarea>
-        </p> -->
+          <br />
+          <button class="download hidden">Download</button>
+        </p>
         <br />
         <!-- <h2 id="examples">
           Examples
@@ -60,15 +62,18 @@
           spacebar: document.querySelector('#spacebar'),
           bands: document.querySelector('#bands'),
           export: document.querySelector('#export'),
-          import: document.querySelector('#import')
+          import: document.querySelector('#import'),
+          textarea: document.querySelector('textarea'),
+          download: document.querySelector('button.download')
         };
 
         Equalizer.Resolution = typeof params.resolution === 'number' ? params.resolution : 16;
+        Equalizer.FrameRate = typeof params.frameRate === 'number' ? params.frameRate : 30;
 
-        var context = new (AudioContext || webkitAudioContext)();
+        var context = new AudioContext();
         var equalizer = new Equalizer(context).appendTo($.tool);
         var elem = equalizer.domElement;
-        var sound;
+        var sound, data;
 
         elem.style.display = 'inline-block';
         elem.style.margin = '20px';
@@ -81,20 +86,9 @@
         elem.addEventListener('dragleave', dragleave);
         elem.addEventListener('click', toggle, false);
         $.spacebar.addEventListener('click', toggle, false);
-        // document.querySelector('#export').addEventListener('click', function() {
-        //   if (!equalizer.timeline) {
-        //     return;
-        //   }
-        //   var textarea = document.querySelector('textarea');
-        //   textarea.innerHTML = JSON.stringify(equalizer.timeline.toJSON());
-        // }, false);
-        // document.querySelector('#import').addEventListener('click', function() {
-        //   var textarea = document.querySelector('textarea');
-        //   if (!loop.init) {
-        //     loop();
-        //     loop.init = true;
-        //   }
-        // }, false);
+        $.export.addEventListener('click', generateAnalysis, false);
+        $.import.addEventListener('click', importAnalysis, false);
+        $.download.addEventListener('click', download, false);
 
         equalizer.update();
 
@@ -120,12 +114,12 @@
 
           var reader = new FileReader();
           reader.onload = function(e) {
-            var data = e.target.result;
+            data = e.target.result;
             if (sound) {
               sound.stop();
             }
-            sound = new Sound(context, data, setup);
-            sound.url = file.name;
+            sound = new Sound(context, data.slice(0), setup);
+            sound.src = file.name;
             equalizer.reset();
           };
 
@@ -147,19 +141,106 @@
 
         function loop() {
           requestAnimationFrame(loop);
-          equalizer.update();
+          if (sound.playing) {
+            equalizer.update();
+          }
         }
 
         function toggle() {
+
           if (!sound) {
             alert('You need to drop an audio file before the equalizer can run.');
             return;
           }
+
           if (sound.playing) {
             sound.pause();
           } else {
             sound.play();
           }
+        }
+
+        function generateAnalysis(e) {
+
+          if (!sound) {
+            alert('You need to drop an audio file before the equalizer can run.');
+            return;
+          } else if ($.textarea.classList.contains('processing')) {
+            alert(`Already processing ${sound.src}`);
+            return;
+          }
+
+          var result = {
+            frameRate: Equalizer.FrameRate,
+            resolution: Equalizer.Resolution,
+            samples: []
+          };
+
+          var context = new AudioContext();
+          var equalizer = new Equalizer(context);
+          var s = new Sound(context, data.slice(0), loaded);
+          var pass = context.createGain();
+          var elapsed = 0;
+
+          $.textarea.classList.add('processing');
+
+          function loaded() {
+
+            equalizer.add(pass);
+            s.applyFilter(pass);
+            s.volume = 0;
+            s.gain.disconnect(context.destination);
+            render();
+
+          }
+
+          function render(){
+
+            var pct = Math.round(100 * elapsed / s.duration);
+            $.textarea.textContent = `Generating Analysis\n${pct}%`;
+
+            if (elapsed >= s.duration) {
+              complete();
+              return;
+            }
+
+            s.play({
+              offset: elapsed
+            });
+
+            equalizer.update();
+
+            var sample = [];
+
+            for (var i = 0; i < equalizer.bands.length; i++) {
+              var band = equalizer.bands[i];
+              sample.push(Math.round(band.value));
+            }
+
+            console.log(sample.join(', '));
+            result.samples.push(sample);
+
+            elapsed += 1 / result.frameRate;
+            requestAnimationFrame(render);
+
+          }
+
+          function complete() {
+            $.textarea.classList.remove('processing');
+            $.textarea.textContent = JSON.stringify(result);
+            $.download.classList.remove('hidden');
+            $.download.result = result;
+          }
+
+        }
+
+        function importAnalysis(e) {
+          console.log('TODO');
+        }
+
+        function download() {
+          var filename = sound.src.replace(/\.[a-z0-9]*$/i, '.json');
+          saveTemplateAsFile(filename, $.download.result);
         }
 
         function updateStats() {
@@ -199,6 +280,26 @@
             date.getFullYear()
           ].join('')
         }
+
+        function saveTemplateAsFile(filename, dataObjToWrite) {
+
+          var blob = new Blob([JSON.stringify(dataObjToWrite)], { type: 'text/json' });
+          var link = document.createElement('a');
+
+          link.download = filename;
+          link.href = window.URL.createObjectURL(blob);
+          link.dataset.downloadurl = ['text/json', link.download, link.href].join(':');
+
+          var e = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          });
+
+          link.dispatchEvent(e);
+          link.remove()
+
+        };
 
       </script>
     </div>
