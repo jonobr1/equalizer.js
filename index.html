@@ -64,7 +64,9 @@
           export: document.querySelector('#export'),
           import: document.querySelector('#import'),
           textarea: document.querySelector('textarea'),
-          download: document.querySelector('button.download')
+          download: document.querySelector('button.download'),
+          updatedAt: document.querySelector('#updated-date'),
+          createdAt: document.querySelector('#created-date')
         };
 
         Equalizer.Resolution = typeof params.resolution === 'number' ? params.resolution : 16;
@@ -273,10 +275,8 @@
               return;
             }
             var resp = JSON.parse(xhr.responseText);
-            document.querySelector('#updated-date').innerHTML
-              = formatDate(resp.pushed_at);
-            document.querySelector('#created-date').innerHTML
-              = formatDate(resp.created_at);
+            $.updatedAt.textContent = formatDate(resp.pushed_at);
+            $.createdAt.textContent = formatDate(resp.created_at);
           };
           xhr.send();
 
