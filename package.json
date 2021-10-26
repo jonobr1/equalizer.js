@@ -1,6 +1,6 @@
 {
   "name": "equalizer.js",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "An audio analysis tool for real-time and choreographed visualizations.",
   "main": "build/equalizer.js",
   "module": "src/equalizer.js",
