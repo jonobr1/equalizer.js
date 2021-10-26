@@ -1,4 +1,4 @@
-# Equalizer
+# equalizer.js
 
 :ear: An audio analysis tool for real-time and choreographed visualizations.
 
