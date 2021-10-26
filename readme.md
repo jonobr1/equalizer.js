@@ -13,17 +13,21 @@ Visit the hosted [project page](http://jonobr1.com/equalizer) to try it out and 
 
 ## Usage
 
-`npm install --save @jonobr1/equalizer`
+```
+npm install --save @jonobr1/equalizer
+```
 
 ### Import in ES6 environment
 
-`import { Equalizer } from '@jonobr1/equalizer';`
+```javascript
+import { Equalizer } from '@jonobr1/equalizer';
+```
 
 ### Load Script in HTML file:
 
 This example creates an audio oscillator and visualizes it with an instance of `Equalizer`.
 
-```html5
+```html
 <!doctype html>
 <html>
   <head>
