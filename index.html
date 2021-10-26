@@ -293,13 +293,9 @@
             'July', 'August', 'September', 'October', 'November', 'December'];
           return [
             months[date.getMonth()],
-            ' ',
-            date.getDate(),
-            '<sup>',
-            suffices[suffices.getIndex(date.getDate())] || 'th',
-            '</sup>, ',
+            date.getDate() + ',',
             date.getFullYear()
-          ].join('')
+          ].join(' ')
         }
 
         function saveTemplateAsFile(filename, dataObjToWrite) {
