@@ -9,7 +9,7 @@
 5. [x] Export/import analyzed data for precise playback
 6. [x] Added classes for easy loading of audio files
 
-Visit the hosted [project page](http://jonobr1.com/equalizer) to try it out and to export or import JSON data for use with Equalizer.
+Visit the hosted [project page](https://jonobr1.com/equalizer.js/) to try it out and to export or import JSON data for use with Equalizer.
 
 ## Usage
 

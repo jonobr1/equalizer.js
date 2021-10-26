@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jonobr1/equalizer.git"
+    "url": "git+https://github.com/jonobr1/equalizer.js.git"
   },
   "keywords": [
     "audio",
@@ -38,7 +38,7 @@
   "bugs": {
     "url": "https://github.com/jonobr1/equalizer/issues"
   },
-  "homepage": "http://jonobr1.com/equalizer",
+  "homepage": "https://jonobr1.com/equalizer.js/",
   "devDependencies": {
     "esbuild": "^0.12.14",
     "eslint": "^8.1.0",
