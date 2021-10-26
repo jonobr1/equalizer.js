@@ -14,13 +14,13 @@ Visit the hosted [project page](https://jonobr1.com/equalizer.js/) to try it out
 ## Usage
 
 ```
-npm install --save @jonobr1/equalizer
+npm install --save equalizer.js
 ```
 
 ### Import in ES6 environment
 
 ```javascript
-import { Equalizer } from '@jonobr1/equalizer';
+import { Equalizer } from 'equalizer.js';
 ```
 
 ### Load Script in HTML file:
