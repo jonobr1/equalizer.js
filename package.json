@@ -1,11 +1,12 @@
 {
-  "name": "equalizer",
+  "name": "@jonobr1/equalizer",
   "version": "2.0.0",
   "description": "An audio analysis tool for real-time and choreographed visualizations.",
   "main": "build/equalizer.js",
-  "module": "build/equalizer.umd.js",
+  "module": "src/equalizer.js",
   "scripts": {
-    "build": "node ./utils/build.js"
+    "build": "node ./utils/build.js",
+    "types": "tsc --outFile types.d.ts"
   },
   "files": [
     "package.json",
@@ -23,20 +24,22 @@
     "visual",
     "visualization",
     "html5",
-    "two.js",
     "tool",
     "equalizer",
     "fft",
     "sound"
   ],
-  "author": "jonobr1",
+  "author": {
+    "name": "jonobr1",
+    "url": "http://jonobr1.com/"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/jonobr1/equalizer/issues"
   },
-  "homepage": "https://github.com/jonobr1/equalizer#readme",
+  "homepage": "http://jonobr1.com/equalizer",
   "devDependencies": {
-    "esbuild": "^0.12.14"
-  },
-  "dependencies": {}
+    "esbuild": "^0.12.14",
+    "typescript": "^4.4.4"
+  }
 }
