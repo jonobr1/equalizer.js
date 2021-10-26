@@ -1,14 +1,12 @@
-import { defaults, extend } from './underscore.js';
+import { defaults } from './underscore.js';
 
 var identity = function(v) { return v; };
 
-var Context, has;
+var has;
 
 try {
-  Context = AudioContext || webkitAudioContext;
-  has = !!(Context);
+  has = !!AudioContext;
 } catch (e) {
-  Context = null;
   has = false;
 }
 
@@ -262,7 +260,7 @@ export class Sound {
     var time;
 
     if (!this.buffer) {
-      return this;
+      return;
     }
 
     if (this.#loop) {

@@ -187,10 +187,7 @@ export class Equalizer {
         continue;
       }
 
-      var pct = i / this.bands.length;
       var band = this.bands[i];
-
-      var value = band.value;
       var peak = band.peak.value;
 
       var direction, changedDirection, y, anchor;

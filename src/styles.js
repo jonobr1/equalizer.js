@@ -46,4 +46,4 @@ var styles = {
 export {
   styles,
   colors
-}
+};
