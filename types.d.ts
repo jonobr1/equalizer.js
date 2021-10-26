@@ -28,7 +28,6 @@ declare module "sound" {
         get currentTime(): number;
         get millis(): number;
         get duration(): any;
-        #private;
     }
 }
 declare module "renderer" {
