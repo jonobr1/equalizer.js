@@ -73,12 +73,14 @@ declare module "renderer" {
         x2: number;
         y2: number;
         value: number;
+        render(ctx: any): Line;
     }
     export class Circle extends Shape {
         constructor(x: any, y: any, r: any);
         x: number;
         y: number;
         r: number;
+        render(ctx: any): Circle;
     }
     export class Anchor extends Circle {
         sum: number;

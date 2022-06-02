@@ -548,8 +548,8 @@
       return this;
     }
     load(path, callback) {
+      var scope = this;
       return new Promise(function(resolve, reject) {
-        var scope = this;
         var r = new XMLHttpRequest();
         r.open("GET", path, true);
         r.onerror = reject;
