@@ -334,7 +334,7 @@ export class Equalizer {
       console.warn('Equalizer.js: expected index, but got none.');
       return null;
     }
-    var anchor = this.average[i];
+    var anchor = this.average.vertices[i];
     if (anchor) {
       return anchor.value;
     }

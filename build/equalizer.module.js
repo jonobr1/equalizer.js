@@ -665,6 +665,66 @@ var _Equalizer = class {
     this.average.index = 1;
     return this;
   }
+  getBand(i) {
+    if (typeof i === "undefined") {
+      console.warn("Equalizer.js: expected index, but got none.");
+      return null;
+    }
+    var band = this.bands[i];
+    if (band) {
+      return band.value;
+    }
+    console.warn("Equalizer.js: out of index", i);
+    return null;
+  }
+  getPeak(i) {
+    if (typeof i === "undefined") {
+      console.warn("Equalizer.js: expected index, but got none.");
+      return null;
+    }
+    var band = this.bands[i];
+    if (band) {
+      return band.peak.value;
+    }
+    console.warn("Equalizer.js: out of index", i);
+    return null;
+  }
+  getDirection(i) {
+    if (typeof i === "undefined") {
+      console.warn("Equalizer.js: expected index, but got none.");
+      return null;
+    }
+    var band = this.bands[i];
+    if (band) {
+      return band.direction.value;
+    }
+    console.warn("Equalizer.js: out of index", i);
+    return null;
+  }
+  getBeat(i) {
+    if (typeof i === "undefined") {
+      console.warn("Equalizer.js: expected index, but got none.");
+      return null;
+    }
+    var band = this.bands[i];
+    if (band) {
+      return band.direction.value;
+    }
+    console.warn("Equalizer.js: out of index", i);
+    return null;
+  }
+  getAverage(i) {
+    if (typeof i === "undefined") {
+      console.warn("Equalizer.js: expected index, but got none.");
+      return null;
+    }
+    var anchor = this.average.vertices[i];
+    if (anchor) {
+      return anchor.value;
+    }
+    console.warn("Equalizer.js: out of index", i);
+    return null;
+  }
   get analyzer() {
     return this.analyser;
   }

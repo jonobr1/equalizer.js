@@ -169,6 +169,11 @@ declare module "equalizer" {
         remove(node: any): any[];
         update(currentTime: any, silent: any): Equalizer;
         reset(): Equalizer;
+        getBand(i: number): number;
+        getPeak(i: number): number;
+        getDirection(i: number): number;
+        getBeat(i: number): number;
+        getAverage(i: number): number;
         set analyzer(arg: any);
         get analyzer(): any;
         set analyzed(arg: any);
