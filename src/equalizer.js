@@ -172,8 +172,10 @@ export class Equalizer {
     var sum = 0;
     var bin = Math.floor(step);
 
-    this.renderer.clear();
-    this.renderer.save();
+    if (!silent) {
+      this.renderer.clear();
+      this.renderer.save();
+    }
 
     for (var j = 0, i = 0; j < this.analyser.data.length; j++) {
 
@@ -236,18 +238,22 @@ export class Equalizer {
         anchor.updated = false;
       }
 
-      band.render(this.renderer.ctx);
-      band.peak.render(this.renderer.ctx);
-      band.beat.render(this.renderer.ctx);
-      band.direction.render(this.renderer.ctx);
+      if (!silent) {
+        band.render(this.renderer.ctx);
+        band.peak.render(this.renderer.ctx);
+        band.beat.render(this.renderer.ctx);
+        band.direction.render(this.renderer.ctx);
+      }
 
       sum = 0;
       i++;
 
     }
 
-    this.average.render(this.renderer.ctx);
-    this.renderer.restore();
+    if (!silent) {
+      this.average.render(this.renderer.ctx);
+      this.renderer.restore();
+    }
 
     if (this.analysed) {
       // TODO: Extrapolate the data to this.analyser.data
