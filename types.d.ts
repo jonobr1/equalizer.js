@@ -182,8 +182,6 @@ declare module 'equalizer.js' {
     set analyzed(arg: any);
     get analyzed(): any;
   }
-  import { Renderer } from 'renderer';
-  import { Band } from 'renderer';
-  import { Polyline } from 'renderer';
-  import { Sound } from 'sound';
+  import { Renderer, Band, Polyline } from 'equalizer.js/renderer';
+  import { Sound } from 'equalizer.js/sound';
 }
