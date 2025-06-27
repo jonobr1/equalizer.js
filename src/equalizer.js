@@ -4,7 +4,6 @@ import { clamp, extend, mod } from './underscore.js';
 import { styles, colors } from './styles.js';
 
 export class Equalizer {
-
   static Precision = 0; // [0, 255]
   static FrameRate = 30;
   static Resolution = 16;
@@ -23,8 +22,7 @@ export class Equalizer {
   average;
 
   constructor(context, width, height, fftSize) {
-
-    this.ctx = context || Sound.ctx;
+    this.ctx = context || new AudioContext();
     this.nodes = [];
 
     this.analyser = this.ctx.createAnalyser();
@@ -34,15 +32,15 @@ export class Equalizer {
     this.domElement = document.createElement('div');
     this.domElement.classList.add('equalizer');
 
-    this.renderer = new Renderer(width || 200, height || 100)
-      .appendTo(this.domElement);
+    this.renderer = new Renderer(width || 200, height || 100).appendTo(
+      this.domElement
+    );
 
     extend(this.renderer.domElement.style, styles.classic);
 
     var vertices = [];
     this.bands = [];
     for (var i = 0; i < Equalizer.Resolution; i++) {
-
       var pct = (i + 0.5) / Equalizer.Resolution;
       var x = pct * this.renderer.width;
 
@@ -84,7 +82,6 @@ export class Equalizer {
 
       this.bands.push(band);
       vertices.push(anchor);
-
     }
 
     this.average = new Polyline(vertices);
@@ -93,7 +90,6 @@ export class Equalizer {
     this.average.linewidth = 1;
     this.average.noFill();
     this.average.index = 1;
-
   }
 
   appendTo(elem) {
@@ -102,17 +98,14 @@ export class Equalizer {
   }
 
   load(path, callback) {
-
     var scope = this;
 
-    return new Promise(function(resolve, reject) {
-
+    return new Promise(function (resolve, reject) {
       var r = new XMLHttpRequest();
       r.open('GET', path, true);
 
       r.onerror = reject;
-      r.onload = function() {
-
+      r.onload = function () {
         var data = JSON.parse(r.response);
         scope.analysed = data;
 
@@ -121,39 +114,31 @@ export class Equalizer {
         }
 
         resolve(scope.analysed);
-
       };
 
       r.send();
-
     });
-
   }
 
   add(node) {
-
     if (this.nodes.indexOf(node) < 0) {
       this.nodes.push(node);
       node.connect(this.analyser);
     }
 
     return this;
-
   }
 
   remove(node) {
-
     var index = this.nodes.indexOf(node);
     if (index >= 0) {
       return this.nodes.splice(index, 1);
     }
 
     return null;
-
   }
 
   update(currentTime, silent) {
-
     if (this.analysed) {
       var sid = Math.floor(currentTime * this.analysed.frameRate);
       var sample = this.analysed.samples[sid];
@@ -178,7 +163,6 @@ export class Equalizer {
     }
 
     for (var j = 0, i = 0; j < this.analyser.data.length; j++) {
-
       var k = mod(Math.floor(j - bin / 2), bin);
       sum += clamp(this.analyser.data[j], 0, 255);
 
@@ -202,8 +186,12 @@ export class Equalizer {
       }
 
       direction = band.direction.value;
-      band.direction.value = (band.peak.value - peak < - Equalizer.Precision
-        ? - 1 : (band.peak.value - peak <= Equalizer.Precision ? 0 : 1));
+      band.direction.value =
+        band.peak.value - peak < -Equalizer.Precision
+          ? -1
+          : band.peak.value - peak <= Equalizer.Precision
+          ? 0
+          : 1;
       changedDirection = direction !== band.direction.value;
 
       if (changedDirection && band.direction.value > 0) {
@@ -214,23 +202,27 @@ export class Equalizer {
         band.beat.updated = false;
       }
 
-      band.direction.stroke = band.direction.value <= 0 ? colors.pink
-        : colors.green;
+      band.direction.stroke =
+        band.direction.value <= 0 ? colors.pink : colors.green;
 
       y = this.renderer.height - height * (band.value / Equalizer.Amplitude);
       band.y1 = this.renderer.height;
       band.y2 = Math.min(y, this.renderer.height - 2);
 
-      y = this.renderer.height - height * (band.peak.value / Equalizer.Amplitude);
+      y =
+        this.renderer.height - height * (band.peak.value / Equalizer.Amplitude);
       band.peak.y1 = band.peak.y2 = y;
 
       anchor = this.average.vertices[i];
       anchor.sum += band.value;
       anchor.value = anchor.sum / this.average.index;
-      anchor.y = this.renderer.height - height * anchor.value / Equalizer.Amplitude;
+      anchor.y =
+        this.renderer.height - (height * anchor.value) / Equalizer.Amplitude;
 
-      if (Math.abs(band.value - anchor.value)
-        > Equalizer.Amplitude * Equalizer.Threshold) {
+      if (
+        Math.abs(band.value - anchor.value) >
+        Equalizer.Amplitude * Equalizer.Threshold
+      ) {
         anchor.scale = 2;
         anchor.updated = true;
       } else {
@@ -247,7 +239,6 @@ export class Equalizer {
 
       sum = 0;
       i++;
-
     }
 
     if (!silent) {
@@ -265,11 +256,9 @@ export class Equalizer {
     this.average.index++;
 
     return this;
-
   }
 
   reset() {
-
     for (var i = 0; i < this.average.vertices.length; i++) {
       var anchor = this.average.vertices[i];
       anchor.sum = 0;
@@ -280,7 +269,6 @@ export class Equalizer {
     this.average.index = 1;
 
     return this;
-
   }
 
   getBand(i) {
@@ -365,5 +353,4 @@ export class Equalizer {
   set analyzed(v) {
     this.analysed = v;
   }
-
 }
