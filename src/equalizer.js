@@ -92,6 +92,70 @@ export class Equalizer {
     this.average.index = 1;
   }
 
+  static GenerateAnalysis(src) {
+    return new Promise((resolve) => {
+      const analysis = {
+        frameRate: Equalizer.FrameRate,
+        resolution: Equalizer.Resolution,
+        samples: [],
+      };
+      const context = new AudioContext();
+      const equalizer = new Equalizer(context);
+      const pass = context.createGain();
+      const sound = new Sound(context, src, loaded);
+
+      let elapsed = 0;
+
+      function loaded() {
+        equalizer.add(sound.gain);
+        sound.gain.connect(pass);
+        pass.gain.value = 0;
+        pass.connect(context.destination);
+        sound.gain.disconnect(context.destination);
+        requestAnimationFrame(batch);
+      }
+
+      function batch() {
+        for (let i = 0; i < 10; i++) {
+          const completed = render();
+          if (completed) {
+            break;
+          }
+        }
+        requestAnimationFrame(batch);
+      }
+
+      function render() {
+        if (elapsed >= sound.duration) {
+          complete();
+          return true;
+        }
+
+        sound.play({
+          offset: elapsed,
+        });
+
+        equalizer.update(undefined, true);
+
+        const sample = [];
+
+        for (let i = 0; i < equalizer.bands.length; i++) {
+          const band = equalizer.getBand(i);
+          sample.push(Math.round(band));
+        }
+
+        analysis.samples.push(sample);
+
+        elapsed += 1 / analysis.frameRate;
+        return false;
+      }
+
+      function complete() {
+        resolve(analysis);
+      }
+    });
+  }
+
   appendTo(elem) {
     elem.appendChild(this.domElement);
     return this;

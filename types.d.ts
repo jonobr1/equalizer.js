@@ -7,19 +7,28 @@ declare module 'equalizer.js/underscore' {
 declare module 'equalizer.js/sound' {
   export class Sound {
     static has: any;
-    constructor(context: any, uri: any, callback: any);
+    constructor(
+      context: AudioContext,
+      uri: string | ArrayBuffer,
+      callback: Function
+    );
     playing: boolean;
-    filter: any;
-    buffer: any;
-    data: any;
-    gain: any;
-    src: any;
-    ctx: any;
-    applyFilter(node: any): Sound;
-    play(options: any): Sound;
+    filter: AudioNode;
+    buffer: AudioBuffer;
+    data: ArrayBuffer;
+    gain: GainNode;
+    src: string;
+    ctx: AudioContext;
+    applyFilter(node: AudioNode): Sound;
+    play(options?: {
+      time?: number;
+      loop?: boolean;
+      offset?: number;
+      duration?: number;
+    }): Sound;
     source: any;
-    pause(options: any): Sound;
-    stop(options: any): Sound;
+    pause(options?: { time?: number }): Sound;
+    stop(options?: { time?: number }): Sound;
     set volume(arg: number);
     get volume(): number;
     set speed(arg: number);
@@ -27,19 +36,19 @@ declare module 'equalizer.js/sound' {
     set currentTime(arg: number);
     get currentTime(): number;
     get millis(): number;
-    get duration(): any;
+    get duration(): number;
   }
 }
 declare module 'equalizer.js/renderer' {
   export class Point {
-    constructor(x: any, y: any);
+    constructor(x: number, y: number);
     x: number;
     y: number;
     value: number;
     sum: number;
   }
   export class Renderer {
-    constructor(width: any, height: any);
+    constructor(width: number, height: number);
     domElement: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     children: any[];
@@ -59,7 +68,7 @@ declare module 'equalizer.js/renderer' {
     scale: number;
     noStroke(): Shape;
     noFill(): Shape;
-    render(ctx: any): void;
+    render(ctx: CanvasRenderingContext2D): void;
   }
   export class Band extends Line {
     peak: Peak;
@@ -67,33 +76,32 @@ declare module 'equalizer.js/renderer' {
     direction: Direction;
   }
   export class Line extends Shape {
-    constructor(x1: any, y1: any, x2: any, y2: any);
+    constructor(x1: number, y1: number, x2: number, y2: number);
     x1: number;
     y1: number;
     x2: number;
     y2: number;
     value: number;
-    render(ctx: any): Line;
+    render(ctx: CanvasRenderingContext2D): Line;
   }
   export class Circle extends Shape {
-    constructor(x: any, y: any, r: any);
+    constructor(x: number, y: number, r: number);
     x: number;
     y: number;
     r: number;
-    render(ctx: any): Circle;
+    render(ctx: CanvasRenderingContext2D): Circle;
   }
   export class Anchor extends Circle {
     sum: number;
     value: number;
   }
   export class Polyline extends Shape {
-    constructor(vertices: any);
+    constructor(vertices: Anchor[]);
     vertices: any;
     index: number;
   }
   class Peak extends Line {}
   class Direction extends Line {}
-  export {};
 }
 declare module 'equalizer.js/styles' {
   export namespace styles {
@@ -152,6 +160,11 @@ declare module 'equalizer.js' {
     static Amplitude: number;
     static Threshold: number;
     static Sound: typeof Sound;
+    static GenerateAnalysis(src: string): {
+      frameRate: number;
+      resolution: number;
+      sample: number[][];
+    };
     constructor(
       context?: AudioContext,
       width?: number,
@@ -177,10 +190,18 @@ declare module 'equalizer.js' {
     getDirection(i: number): number;
     getBeat(i: number): number;
     getAverage(i: number): number;
-    set analyzer(arg: any);
-    get analyzer(): any;
-    set analyzed(arg: any);
-    get analyzed(): any;
+    set analyzer(node: AnalyserNode);
+    get analyzer(): AnalyserNode;
+    set analyzed(analysis: {
+      frameRate: number;
+      resolution: number;
+      samples: number[][];
+    });
+    get analyzed(): {
+      frameRate: number;
+      resolution: number;
+      samples: number[][];
+    };
   }
   import { Renderer, Band, Polyline } from 'equalizer.js/renderer';
   import { Sound } from 'equalizer.js/sound';
