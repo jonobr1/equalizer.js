@@ -92,6 +92,7 @@ export class Equalizer {
     this.average.index = 1;
   }
 
+  // TODO: WIP
   static GenerateAnalysis(src, onProgress, onComplete) {
     return new Promise((resolve) => {
       const analysis = {
@@ -105,6 +106,7 @@ export class Equalizer {
       const sound = new Sound(context, src, loaded);
 
       let elapsed = 0;
+      let currentTime = 0;
 
       function loaded() {
         equalizer.add(sound.gain);
@@ -112,47 +114,41 @@ export class Equalizer {
         pass.gain.value = 0;
         pass.connect(context.destination);
         sound.gain.disconnect(context.destination);
-        requestAnimationFrame(batch);
-      }
-
-      function batch() {
-        for (let i = 0; i < 10; i++) {
-          const completed = render();
-          if (completed) {
-            break;
-          }
-        }
-        requestAnimationFrame(batch);
+        sound.play();
+        requestAnimationFrame(render);
       }
 
       function render() {
-        if (elapsed >= sound.duration) {
+        if (sound.currentTime >= sound.duration) {
           complete();
           return true;
         }
 
-        const pct = Math.min(elapsed / sound.duration, 1);
-        if (typeof onProgress === 'function') {
-          onProgress(pct);
+        elapsed += sound.currentTime - currentTime;
+
+        if (elapsed >= 1 / analysis.frameRate) {
+          // Only add to the samples if it aligns with
+          // with our frame rate.
+          const pct = Math.min(sound.currentTime / sound.duration, 1);
+          if (typeof onProgress === 'function') {
+            onProgress(pct);
+          }
+
+          equalizer.update(undefined, true);
+
+          const sample = [];
+
+          for (let i = 0; i < equalizer.bands.length; i++) {
+            const band = equalizer.getBand(i);
+            sample.push(Math.round(band));
+          }
+
+          analysis.samples.push(sample);
+          elapsed = 0;
         }
 
-        sound.play({
-          offset: elapsed,
-        });
-
-        equalizer.update(undefined, true);
-
-        const sample = [];
-
-        for (let i = 0; i < equalizer.bands.length; i++) {
-          const band = equalizer.getBand(i);
-          sample.push(Math.round(band));
-        }
-
-        analysis.samples.push(sample);
-
-        elapsed += 1 / analysis.frameRate;
-        return false;
+        currentTime = sound.currentTime;
+        requestAnimationFrame(render);
       }
 
       function complete() {

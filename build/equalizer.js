@@ -564,13 +564,9 @@
           requestAnimationFrame(batch);
         }
         function batch() {
-          for (let i = 0; i < 10; i++) {
-            const completed = render();
-            if (completed) {
-              break;
-            }
+          if (!render()) {
+            requestAnimationFrame(batch);
           }
-          requestAnimationFrame(batch);
         }
         function render() {
           if (elapsed >= sound.duration) {
