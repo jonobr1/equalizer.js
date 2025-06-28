@@ -1,11 +1,12 @@
 {
   "name": "equalizer.js",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "An audio analysis tool for real-time and choreographed visualizations.",
   "main": "build/equalizer.js",
   "module": "src/equalizer.js",
   "types": "types.d.ts",
   "scripts": {
+    "dev": "esbuild --servedir=. --serve=8080",
     "build": "node ./utils/build.js",
     "lint": "eslint . --fix",
     "types": "tsc --outFile types.d.ts"

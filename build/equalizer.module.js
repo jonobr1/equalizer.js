@@ -491,7 +491,7 @@ var _Equalizer = class {
   bands;
   average;
   constructor(context, width, height, fftSize) {
-    this.ctx = context || Sound.ctx;
+    this.ctx = context || new AudioContext();
     this.nodes = [];
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = fftSize || this.analyser.frequencyBinCount;
@@ -541,6 +541,65 @@ var _Equalizer = class {
     this.average.linewidth = 1;
     this.average.noFill();
     this.average.index = 1;
+  }
+  static GenerateAnalysis(src, onProgress, onComplete) {
+    return new Promise((resolve) => {
+      const analysis = {
+        frameRate: _Equalizer.FrameRate,
+        resolution: _Equalizer.Resolution,
+        samples: []
+      };
+      const context = new AudioContext();
+      const equalizer = new _Equalizer(context);
+      const pass = context.createGain();
+      const sound = new Sound(context, src, loaded);
+      let elapsed = 0;
+      function loaded() {
+        equalizer.add(sound.gain);
+        sound.gain.connect(pass);
+        pass.gain.value = 0;
+        pass.connect(context.destination);
+        sound.gain.disconnect(context.destination);
+        requestAnimationFrame(batch);
+      }
+      function batch() {
+        for (let i = 0; i < 10; i++) {
+          const completed = render();
+          if (completed) {
+            break;
+          }
+        }
+        requestAnimationFrame(batch);
+      }
+      function render() {
+        if (elapsed >= sound.duration) {
+          complete();
+          return true;
+        }
+        const pct = Math.min(elapsed / sound.duration, 1);
+        if (typeof onProgress === "function") {
+          onProgress(pct);
+        }
+        sound.play({
+          offset: elapsed
+        });
+        equalizer.update(void 0, true);
+        const sample = [];
+        for (let i = 0; i < equalizer.bands.length; i++) {
+          const band = equalizer.getBand(i);
+          sample.push(Math.round(band));
+        }
+        analysis.samples.push(sample);
+        elapsed += 1 / analysis.frameRate;
+        return false;
+      }
+      function complete() {
+        if (typeof onComplete === "function") {
+          onComplete(analysis);
+        }
+        resolve(analysis);
+      }
+    });
   }
   appendTo(elem) {
     elem.appendChild(this.domElement);

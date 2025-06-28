@@ -1,28 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>equalizer.js</title>
     <link type="text/css" rel="stylesheet" href="./styles/main.css" />
     <link type="image/png" rel="icon" href="./images/favicon.png" />
     <!-- Primary Meta Tags -->
     <title>equalizer.js</title>
-    <meta name="title" content="equalizer.js">
-    <meta name="description" content="A web-based audio analysis tool for real-time and choreographed visualizations; written in JavaScript.">
+    <meta name="title" content="equalizer.js" />
+    <meta
+      name="description"
+      content="A web-based audio analysis tool for real-time and choreographed visualizations; written in JavaScript."
+    />
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://jonobr1.com/equalizer.js/">
-    <meta property="og:title" content="equalizer.js">
-    <meta property="og:description" content="A web-based audio analysis tool for real-time and choreographed visualizations; written in JavaScript.">
-    <meta property="og:image" content="https://jonobr1.com/equalizer.js/images/thumbnail.png">
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jonobr1.com/equalizer.js/" />
+    <meta property="og:title" content="equalizer.js" />
+    <meta
+      property="og:description"
+      content="A web-based audio analysis tool for real-time and choreographed visualizations; written in JavaScript."
+    />
+    <meta
+      property="og:image"
+      content="https://jonobr1.com/equalizer.js/images/thumbnail.png"
+    />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://jonobr1.com/equalizer.js/">
-    <meta property="twitter:title" content="equalizer.js">
-    <meta property="twitter:description" content="A web-based audio analysis tool for real-time and choreographed visualizations; written in JavaScript.">
-    <meta property="twitter:image" content="https://jonobr1.com/equalizer.js/images/thumbnail.png">
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://jonobr1.com/equalizer.js/" />
+    <meta property="twitter:title" content="equalizer.js" />
+    <meta
+      property="twitter:description"
+      content="A web-based audio analysis tool for real-time and choreographed visualizations; written in JavaScript."
+    />
+    <meta
+      property="twitter:image"
+      content="https://jonobr1.com/equalizer.js/images/thumbnail.png"
+    />
   </head>
   <body>
     <div id="content">
@@ -30,16 +45,31 @@
       <div id="description" class="column">
         <h1 id="title">equalizer.js</h1>
         <p>
-          <span class="symbols">O</span>An audio analysis tool for real-time and choreographed visualizations.
+          <span class="symbols">O</span>An audio analysis tool for real-time and
+          choreographed visualizations.
         </p>
         <p id="links">
-          <a href="https://npmjs.com/package/equalizer.js">NPM</a> &middot; <a href="http://github.com/jonobr1/equalizer">Source Code</a> &middot; <a href="https://github.com/jonobr1/equalizer/blob/master/LICENSE" target="_blank">MIT</a>
+          <a href="https://npmjs.com/package/equalizer.js">NPM</a> &middot;
+          <a href="http://github.com/jonobr1/equalizer">Source Code</a> &middot;
+          <a
+            href="https://github.com/jonobr1/equalizer/blob/master/LICENSE"
+            target="_blank"
+            >MIT</a
+          >
         </p>
         <p id="instructions">
-          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg &mdash; onto the gray outline box above. <!-- Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed.--> Hit the <span id="spacebar" class="action">spacebar</span> to play and pause the music. Once audio starts playing you&apos;ll notice some visual activity, <span id="bands"></span> bands representing different amplitudes at equally spaced frequency bandwidths.
+          Start by dragging an audio file &mdash; preferably a wav, mp3, or ogg
+          &mdash; onto the gray outline box above.
+          <!-- Once loaded a rotated <a class="explanation" href="https://en.wikipedia.org/wiki/Staff_(music)" target="_blank">staff</a> will be displayed.-->
+          Hit the <span id="spacebar" class="action">spacebar</span> to play and
+          pause the music. Once audio starts playing you&apos;ll notice some
+          visual activity, <span id="bands"></span> bands representing different
+          amplitudes at equally spaced frequency bandwidths.
         </p>
         <p>
-          You can also <span id="export" class="action">export</span> and <span id="import" class="action">import</span> data as JSON with the below text field:
+          You can also <span id="export" class="action">export</span> and
+          <span id="import" class="action">import</span> data as JSON with the
+          below text field:
           <br />
           <textarea width="300" height="200"></textarea>
           <br />
@@ -57,16 +87,17 @@
           <li>Choreographed Data</li>
         </ul> -->
         <p id="post-scriptum">
-          Created <span id="created-date"></span> and updated <span id="updated-date"></span>.
+          Created <span id="created-date"></span> and updated
+          <span id="updated-date"></span>.
           <br />
-          A free and open source tool by <a href="http://jono.fyi/" target="_blank">Jono Brandel</a>
+          A free and open source tool by
+          <a href="http://jono.fyi/" target="_blank">Jono Brandel</a>
           <br />
         </p>
       </div>
     </div>
     <div class="scripts">
       <script type="module">
-
         import * as qp from './third-party/query-params.js';
         import { Equalizer } from './src/equalizer.js';
         import { Sound } from './src/sound.js';
@@ -85,11 +116,13 @@
           textarea: document.querySelector('textarea'),
           download: document.querySelector('button.download'),
           updatedAt: document.querySelector('#updated-date'),
-          createdAt: document.querySelector('#created-date')
+          createdAt: document.querySelector('#created-date'),
         };
 
-        Equalizer.Resolution = typeof params.resolution === 'number' ? params.resolution : 16;
-        Equalizer.FrameRate = typeof params.frameRate === 'number' ? params.frameRate : 30;
+        Equalizer.Resolution =
+          typeof params.resolution === 'number' ? params.resolution : 16;
+        Equalizer.FrameRate =
+          typeof params.frameRate === 'number' ? params.frameRate : 30;
 
         var context = new AudioContext();
         var equalizer = new Equalizer(context).appendTo($.tool);
@@ -124,7 +157,6 @@
         }
 
         function drop(e) {
-
           e.stopPropagation();
           e.preventDefault();
 
@@ -136,7 +168,7 @@
           }
 
           var reader = new FileReader();
-          reader.onload = function(e) {
+          reader.onload = function (e) {
             data = e.target.result;
             if (sound) {
               sound.stop();
@@ -147,7 +179,6 @@
           };
 
           reader.readAsArrayBuffer(file);
-
         }
 
         function dragover(e) {
@@ -178,9 +209,10 @@
         }
 
         function toggle() {
-
           if (!sound) {
-            alert('You need to drop an audio file before the equalizer can run.');
+            alert(
+              'You need to drop an audio file before the equalizer can run.'
+            );
             return;
           }
 
@@ -192,92 +224,41 @@
         }
 
         function generateAnalysis(e) {
-
           if (!sound) {
-            alert('You need to drop an audio file before the equalizer can run.');
+            alert(
+              'You need to drop an audio file before the equalizer can run.'
+            );
             return;
           } else if ($.textarea.classList.contains('processing')) {
             alert(`Already processing ${sound.src}`);
             return;
           }
 
-          var result = {
-            frameRate: Equalizer.FrameRate,
-            resolution: Equalizer.Resolution,
-            samples: []
-          };
-
-          var context = new AudioContext();
-          var equalizer = new Equalizer(context);
-          var s = new Sound(context, data.slice(0), loaded);
-          var pass = context.createGain();
-          var elapsed = 0;
-
           $.textarea.classList.add('processing');
 
-          function loaded() {
+          Equalizer.GenerateAnalysis(data.slice(0), onProgress, onComplete);
 
-            equalizer.add(pass);
-            s.applyFilter(pass);
-            s.volume = 0;
-            s.gain.disconnect(context.destination);
-            render();
-
+          function onProgress(pct) {
+            $.textarea.value = `Generating Analysis\n${Math.floor(100 * pct)}%`;
           }
 
-          function render(){
-
-            var pct = Math.round(100 * elapsed / s.duration);
-            $.textarea.value = `Generating Analysis\n${pct}%`;
-
-            if (elapsed >= s.duration) {
-              complete();
-              return;
-            }
-
-            s.play({
-              offset: elapsed
-            });
-
-            equalizer.update();
-
-            var sample = [];
-
-            for (var i = 0; i < equalizer.bands.length; i++) {
-              var band = equalizer.bands[i];
-              sample.push(Math.round(band.value));
-            }
-
-            console.log(sample.join(', '));
-            result.samples.push(sample);
-
-            elapsed += 1 / result.frameRate;
-            requestAnimationFrame(render);
-
-          }
-
-          function complete() {
+          function onComplete(result) {
             $.textarea.classList.remove('processing');
             $.textarea.value = JSON.stringify(result);
             $.download.classList.remove('hidden');
             $.download.result = result;
           }
-
         }
 
         function importAnalysis(e) {
-
           try {
-
             var result = JSON.parse($.textarea.value);
             $.download.result = result;
             equalizer.analysed = result;
-
-          } catch(e) {
+          } catch (e) {
             console.error(e);
             alert('Unable to parse JSON in textarea');
           }
-
         }
 
         function download() {
@@ -286,10 +267,9 @@
         }
 
         function updateStats() {
-
           var xhr = new XMLHttpRequest();
           xhr.open('GET', 'https://api.github.com/repos/jonobr1/equalizer');
-          xhr.onreadystatechange = function() {
+          xhr.onreadystatechange = function () {
             if (!(xhr.readyState === 4 && xhr.status === 200)) {
               return;
             }
@@ -298,51 +278,70 @@
             $.createdAt.textContent = formatDate(resp.created_at);
           };
           xhr.send();
-
         }
 
         function formatDate(time) {
           var date = new Date(time);
           var suffices = ['st', 'nd', 'rd'];
-          suffices.getIndex = function(n) {
+          suffices.getIndex = function (n) {
             var index = parseInt((n + '').slice(-1));
             return index - 1;
           };
-          var months = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
+          var months = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ];
           return [
             months[date.getMonth()],
             date.getDate() + ',',
-            date.getFullYear()
-          ].join(' ')
+            date.getFullYear(),
+          ].join(' ');
         }
 
         function saveTemplateAsFile(filename, dataObjToWrite) {
-
-          var blob = new Blob([JSON.stringify(dataObjToWrite)], { type: 'text/json' });
+          var blob = new Blob([JSON.stringify(dataObjToWrite)], {
+            type: 'text/json',
+          });
           var link = document.createElement('a');
 
           link.download = filename;
           link.href = window.URL.createObjectURL(blob);
-          link.dataset.downloadurl = ['text/json', link.download, link.href].join(':');
+          link.dataset.downloadurl = [
+            'text/json',
+            link.download,
+            link.href,
+          ].join(':');
 
           var e = new MouseEvent('click', {
             view: window,
             bubbles: true,
-            cancelable: true
+            cancelable: true,
           });
 
           link.dispatchEvent(e);
-          link.remove()
-
-        };
-
+          link.remove();
+        }
       </script>
       <!-- Global site tag (gtag.js) - Google Analytics -->
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-QVBN5WNFBR"></script>
+      <script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=G-QVBN5WNFBR"
+      ></script>
       <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+        function gtag() {
+          dataLayer.push(arguments);
+        }
         gtag('js', new Date());
 
         gtag('config', 'G-QVBN5WNFBR');

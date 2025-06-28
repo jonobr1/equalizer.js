@@ -92,7 +92,7 @@ export class Equalizer {
     this.average.index = 1;
   }
 
-  static GenerateAnalysis(src) {
+  static GenerateAnalysis(src, onProgress, onComplete) {
     return new Promise((resolve) => {
       const analysis = {
         frameRate: Equalizer.FrameRate,
@@ -131,6 +131,11 @@ export class Equalizer {
           return true;
         }
 
+        const pct = Math.min(elapsed / sound.duration, 1);
+        if (typeof onProgress === 'function') {
+          onProgress(pct);
+        }
+
         sound.play({
           offset: elapsed,
         });
@@ -151,6 +156,9 @@ export class Equalizer {
       }
 
       function complete() {
+        if (typeof onComplete === 'function') {
+          onComplete(analysis);
+        }
         resolve(analysis);
       }
     });
