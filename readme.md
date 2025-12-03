@@ -2,12 +2,12 @@
 
 :ear: An audio analysis tool for real-time and choreographed visualizations.
 
-1. [x] Accepts all valid Web Audio nodes
-2. [x] Accepts multiple nodes at once for complex scenes
-3. [x] Configurable resolution and frame rate
-4. [x] Dependency free
-5. [x] Export/import analyzed data for precise playback
-6. [x] Added classes for easy loading of audio files
+1. 🔌 Accepts all valid Web Audio nodes
+2. 🎭 Accepts multiple nodes at once for complex scenes
+3. ⚙️ Configurable resolution and frame rate
+4. 🆓 Dependency free
+5. 💾 Export/import analyzed data for precise playback
+6. 📁 Added classes for easy loading of audio files
 
 Visit the hosted [project page](https://jonobr1.com/equalizer.js/) to try it out and to export or import JSON data for use with Equalizer.
 
